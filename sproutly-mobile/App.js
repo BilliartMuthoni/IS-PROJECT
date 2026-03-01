@@ -1,7 +1,9 @@
 import React, { useContext } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createStaticNavigation, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider, AuthContext } from './src/stateManagement/AuthContext.js';
+
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
 // Auth Screens
 import LandingScreen from './src/screens/auth/LandingScreen';
@@ -10,6 +12,8 @@ import SignUpScreen from './src/screens/auth/SignUpScreen';
 import OTPScreen from './src/screens/auth/OTPScreen';
 import RoleSelectionScreen from './src/screens/auth/RoleSelectionScreen';
 
+// Splash Screen
+import SplashScreen from './src/screens/SplashScreen.js';
 //Farmer
 import FarmerDashboard from './src/screens/farmer/FarmerDashboard';
 
@@ -25,7 +29,7 @@ const RootNavigator = () => {
     const { userToken, isLoading } = useContext(AuthContext);
 
     // While checking for a token in storage, show nothing (or a Splash Screen)
-    if (isLoading) return null;
+    if (isLoading) return <SplashScreen />;
 
     return (
         <NavigationContainer>

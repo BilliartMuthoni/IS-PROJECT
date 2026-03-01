@@ -1,3 +1,4 @@
+// Contains information needed by the whole app eg usertoken
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
