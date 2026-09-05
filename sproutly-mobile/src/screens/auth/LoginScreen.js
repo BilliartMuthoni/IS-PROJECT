@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -13,32 +13,28 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthContext } from '../../context/AuthContext';
+import * as AuthService from '../../api/AuthService';
 
 export default function LoginScreen({ navigation }) {
-    const { login } = useContext(AuthContext); // Our new "Brain"
     const [authMethod, setAuthMethod] = useState('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Simplified: Handles the transition to Postgres/Backend later
     const handleLoginSubmit = async () => {
         setLoading(true);
         try {
-            if (authMethod === 'phone') {
-                // Validation for Kenya phone numbers
-                if (phoneNumber.length < 9) throw new Error("Please enter a valid phone number.");
+            if (!password) throw new Error("Please enter your password.");
 
-                // This is where we'd call your Flask API. For now, we navigate to OTP
+            if (authMethod === 'phone') {
+                if (phoneNumber.length < 9) throw new Error("Please enter a valid phone number.");
+                await AuthService.login({ phoneNumber, password });
                 navigation.navigate('OTP', { phoneNumber, isSignUp: false });
             } else {
-                if (!email || !password) throw new Error("Please fill in all fields.");
-
-                // SIMULATED LOGIN: Later replaced with axios.post('/api/login')
-                console.log("Logging in with Email:", email);
-                login("mock-jwt-token"); // Flips the switch in App.js
+                if (!email) throw new Error("Please enter your email.");
+                await AuthService.login({ email, password });
+                navigation.navigate('OTP', { email, isSignUp: false });
             }
         } catch (error) {
             Alert.alert('Login Error', error.message);
@@ -56,10 +52,7 @@ export default function LoginScreen({ navigation }) {
             >
                 <ScrollView contentContainerClassName="flex-grow">
                     <View className="pt-12 px-5">
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            className="p-2.5 self-start flex-row items-center"
-                        >
+                        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2.5 self-start flex-row items-center">
                             <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
                             <Text className="text-white text-base font-semibold ml-1">Back</Text>
                         </TouchableOpacity>
@@ -107,19 +100,17 @@ export default function LoginScreen({ navigation }) {
                             />
                         </View>
 
-                        {authMethod === 'email' && (
-                            <View className="mb-5">
-                                <Text className="text-sm font-semibold text-white mb-2">Password</Text>
-                                <TextInput
-                                    className="bg-black/20 border border-glassBorder rounded-xl px-4 py-4 text-base text-white"
-                                    placeholder="••••••••"
-                                    placeholderTextColor="rgba(255,255,255,0.4)"
-                                    secureTextEntry
-                                    value={password}
-                                    onChangeText={setPassword}
-                                />
-                            </View>
-                        )}
+                        <View className="mb-5">
+                            <Text className="text-sm font-semibold text-white mb-2">Password</Text>
+                            <TextInput
+                                className="bg-black/20 border border-glassBorder rounded-xl px-4 py-4 text-base text-white"
+                                placeholder="••••••••"
+                                placeholderTextColor="rgba(255,255,255,0.4)"
+                                secureTextEntry
+                                value={password}
+                                onChangeText={setPassword}
+                            />
+                        </View>
 
                         <TouchableOpacity
                             className={`bg-white py-[18px] rounded-xl items-center mt-2.5 shadow-lg ${loading ? 'opacity-70' : ''}`}
@@ -129,9 +120,7 @@ export default function LoginScreen({ navigation }) {
                             {loading ? (
                                 <ActivityIndicator color="#1B4332" />
                             ) : (
-                                <Text className="text-primary text-lg font-bold">
-                                    {authMethod === 'phone' ? 'Send OTP' : 'Login'}
-                                </Text>
+                                <Text className="text-primary text-lg font-bold">Send OTP</Text>
                             )}
                         </TouchableOpacity>
 

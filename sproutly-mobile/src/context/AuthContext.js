@@ -29,10 +29,11 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     // The Login Action
-    const login = async (token, roles = []) => {
+    const login = async (token, roles = [], refreshToken = null) => {
         try {
             await AsyncStorage.setItem('userToken', token);
             await AsyncStorage.setItem('userRoles', JSON.stringify(roles));
+            if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
 
             setUserToken(token);
             setUserRoles(roles);
@@ -45,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     // The Logout Action
     const logout = async () => {
         try {
-            await AsyncStorage.multiRemove(['userToken', 'userRoles']);
+            await AsyncStorage.multiRemove(['userToken', 'userRoles', 'refreshToken']);
             setUserToken(null);
             setUserRoles([]);
         } catch (e) {
