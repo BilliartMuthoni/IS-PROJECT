@@ -1,29 +1,29 @@
+import './global.css';
 import React, { useContext } from 'react';
-import { NavigationContainer, createStaticNavigation, useNavigation } from '@react-navigation/native';
+import { View, Text } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { AuthProvider, AuthContext } from './src/stateManagement/AuthContext.js';
-
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { AuthContext, AuthProvider } from './src/context/AuthContext';
 
 // Auth Screens
 import LandingScreen from './src/screens/auth/LandingScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import OTPScreen from './src/screens/auth/OTPScreen';
-import RoleSelectionScreen from './src/screens/auth/RoleSelectionScreen';
 
 // Splash Screen
 import SplashScreen from './src/screens/SplashScreen.js';
-//Farmer
-import FarmerDashboard from './src/screens/farmer/FarmerDashboard';
-
-//Buyer
-import BuyerDashboard from './src/screens/buyer/BuyerDashboard';
-
-//Service Provider
-import ServiceProviderDashboard from './src/screens/service-provider/ServiceProviderDashboard';
 
 const Stack = createStackNavigator();
+
+// TODO: replace with the real FarmerDashboard once it's rebuilt
+function FarmerHomePlaceholder() {
+    return (
+        <View className="flex-1 items-center justify-center bg-white">
+            <Text className="text-lg font-bold text-forestDeep">Farmer Home (placeholder)</Text>
+        </View>
+    );
+}
 
 const RootNavigator = () => {
     const { userToken, isLoading } = useContext(AuthContext);
@@ -41,19 +41,11 @@ const RootNavigator = () => {
                         <Stack.Screen name="Login" component={LoginScreen} />
                         <Stack.Screen name="SignUp" component={SignUpScreen} />
                         <Stack.Screen name="OTP" component={OTPScreen} />
-                        <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
                     </>
                 ) : (
-
                     <>
                         {/*Farmer*/}
-                        <Stack.Screen name="FarmerHome" component={FarmerDashboard} />
-
-                        {/*Buyer*/}
-                        <Stack.Screen name="BuyerHome" component={BuyerDashboard} />
-
-                        {/*Service Provider*/}
-                        <Stack.Screen name="ProviderHome" component={ServiceProviderDashboard} />
+                        <Stack.Screen name="FarmerHome" component={FarmerHomePlaceholder} />
                     </>
                 )}
             </Stack.Navigator>

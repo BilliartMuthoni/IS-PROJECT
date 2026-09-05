@@ -2,7 +2,6 @@ import React, { useState, useContext } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
@@ -13,8 +12,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { AuthContext } from '../../stateManagement/AuthContext'
-import { COLORS } from '../../constants/Colors'
+import { Ionicons } from '@expo/vector-icons';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function SignUpScreen({ navigation }) {
     const { login } = useContext(AuthContext); // Using your AuthContext "Brain"
@@ -43,7 +42,6 @@ export default function SignUpScreen({ navigation }) {
 
                 // After successful DB entry, we "login" to flip the token switch
                 login("mock-postgres-token");
-                navigation.navigate('RoleSelection');
             }
         } catch (error) {
             Alert.alert('Sign Up Error', error.message);
@@ -53,49 +51,54 @@ export default function SignUpScreen({ navigation }) {
     };
 
     return (
-        <LinearGradient
-            colors={[COLORS.forestDeep, COLORS.forestMid, COLORS.forestLight]}
-            style={styles.container}
-        >
+        <LinearGradient colors={['#0B1A13', '#1B3D2F', '#2D5A43']} className="flex-1">
             <StatusBar style="light" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
+                className="flex-1"
             >
-                <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Text style={styles.backButtonText}>← Back</Text>
+                <ScrollView contentContainerClassName="flex-grow pb-10" keyboardShouldPersistTaps="handled">
+                    <View className="pt-12 px-5">
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            className="p-2.5 self-start flex-row items-center"
+                        >
+                            <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+                            <Text className="text-white text-base font-semibold ml-1">Back</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.content}>
-                        <Text style={styles.title}>Create Account</Text>
-                        <Text style={styles.subtitle}>Join the Sproutly community</Text>
+                    <View className="flex-1 px-8 pt-2.5">
+                        <Text className="text-3xl font-bold text-white text-center">Create Account</Text>
+                        <Text className="text-base text-white/70 text-center mb-6">Join the Sproutly community</Text>
 
                         {/* Method Selector */}
-                        <View style={styles.methodSelector}>
+                        <View className="flex-row mb-6 bg-white/10 rounded-2xl p-1 border border-white/10">
                             <TouchableOpacity
-                                style={[styles.methodButton, authMethod === 'phone' && styles.methodButtonActive]}
+                                className={`flex-1 py-3 items-center justify-center rounded-xl ${authMethod === 'phone' ? 'bg-white/20' : ''}`}
                                 onPress={() => setAuthMethod('phone')}
                             >
-                                <Text style={[styles.methodButtonText, authMethod === 'phone' && styles.methodButtonTextActive]}>Phone</Text>
+                                <Text className={`text-base font-semibold ${authMethod === 'phone' ? 'text-white' : 'text-white/60'}`}>
+                                    Phone
+                                </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.methodButton, authMethod === 'email' && styles.methodButtonActive]}
+                                className={`flex-1 py-3 items-center justify-center rounded-xl ${authMethod === 'email' ? 'bg-white/20' : ''}`}
                                 onPress={() => setAuthMethod('email')}
                             >
-                                <Text style={[styles.methodButtonText, authMethod === 'email' && styles.methodButtonTextActive]}>Email</Text>
+                                <Text className={`text-base font-semibold ${authMethod === 'email' ? 'text-white' : 'text-white/60'}`}>
+                                    Email
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
                         {/* Glassy Inputs */}
-                        <View style={styles.formContainer}>
+                        <View>
                             {authMethod === 'phone' ? (
-                                <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Phone Number</Text>
+                                <View className="mb-4">
+                                    <Text className="text-white text-sm font-semibold mb-2 ml-1">Phone Number</Text>
                                     <TextInput
-                                        style={styles.glassInput}
+                                        className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
                                         placeholder="0712 345 678"
                                         placeholderTextColor="rgba(255,255,255,0.4)"
                                         keyboardType="phone-pad"
@@ -105,10 +108,10 @@ export default function SignUpScreen({ navigation }) {
                                 </View>
                             ) : (
                                 <>
-                                    <View style={styles.inputGroup}>
-                                        <Text style={styles.label}>Email Address</Text>
+                                    <View className="mb-4">
+                                        <Text className="text-white text-sm font-semibold mb-2 ml-1">Email Address</Text>
                                         <TextInput
-                                            style={styles.glassInput}
+                                            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
                                             placeholder="farmer@sproutly.com"
                                             placeholderTextColor="rgba(255,255,255,0.4)"
                                             autoCapitalize="none"
@@ -116,10 +119,10 @@ export default function SignUpScreen({ navigation }) {
                                             onChangeText={setEmail}
                                         />
                                     </View>
-                                    <View style={styles.inputGroup}>
-                                        <Text style={styles.label}>Password</Text>
+                                    <View className="mb-4">
+                                        <Text className="text-white text-sm font-semibold mb-2 ml-1">Password</Text>
                                         <TextInput
-                                            style={styles.glassInput}
+                                            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
                                             placeholder="••••••••"
                                             placeholderTextColor="rgba(255,255,255,0.4)"
                                             secureTextEntry
@@ -127,10 +130,10 @@ export default function SignUpScreen({ navigation }) {
                                             onChangeText={setPassword}
                                         />
                                     </View>
-                                    <View style={styles.inputGroup}>
-                                        <Text style={styles.label}>Confirm Password</Text>
+                                    <View className="mb-4">
+                                        <Text className="text-white text-sm font-semibold mb-2 ml-1">Confirm Password</Text>
                                         <TextInput
-                                            style={styles.glassInput}
+                                            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
                                             placeholder="••••••••"
                                             placeholderTextColor="rgba(255,255,255,0.4)"
                                             secureTextEntry
@@ -142,26 +145,33 @@ export default function SignUpScreen({ navigation }) {
                             )}
 
                             <TouchableOpacity
-                                style={[styles.mainButton, loading && { opacity: 0.7 }]}
+                                className={`bg-white py-4 rounded-2xl items-center mt-4 shadow-lg ${loading ? 'opacity-70' : ''}`}
                                 onPress={handleSignUpSubmit}
                                 disabled={loading}
                             >
-                                {loading ? <ActivityIndicator color={COLORS.forestDeep} /> : <Text style={styles.buttonText}>Sign Up</Text>}
+                                {loading ? (
+                                    <ActivityIndicator color="#1B4332" />
+                                ) : (
+                                    <Text className="text-primary text-lg font-bold">Sign Up</Text>
+                                )}
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.divider}>
-                            <View style={styles.line} /><Text style={styles.dividerText}>OR</Text><View style={styles.line} />
+                        <View className="flex-row items-center my-5">
+                            <View className="flex-1 h-px bg-white/20" />
+                            <Text className="mx-4 text-white/40 text-sm">OR</Text>
+                            <View className="flex-1 h-px bg-white/20" />
                         </View>
 
-                        <TouchableOpacity style={styles.googleButton}>
-                            <Text style={styles.googleButtonText}>Continue with Google</Text>
+                        <TouchableOpacity className="border border-white/20 py-[15px] rounded-2xl items-center flex-row justify-center">
+                            <Ionicons name="logo-google" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                            <Text className="text-white text-base font-semibold">Continue with Google</Text>
                         </TouchableOpacity>
 
-                        <View style={styles.footer}>
-                            <Text style={styles.footerText}>Already have an account? </Text>
+                        <View className="flex-row justify-center mt-6">
+                            <Text className="text-white/70 text-sm">Already have an account? </Text>
                             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                <Text style={styles.footerLink}>Login</Text>
+                                <Text className="text-white text-sm font-bold underline">Login</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -170,147 +180,3 @@ export default function SignUpScreen({ navigation }) {
         </LinearGradient>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    scrollContent: {
-        flexGrow: 1, paddingBottom: 40,
-    },
-    header: {
-        paddingTop: 50,
-        paddingHorizontal: 20,
-    },
-    backButton: {
-        padding: 10,
-    },
-    backButtonText: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    content: {
-        flex: 1,
-        paddingHorizontal: 30,
-        paddingTop: 10,
-    },
-    title: {
-        fontSize: 30,
-        fontWeight: 'bold',
-        color: COLORS.white,
-        textAlign: 'center',
-        justifyContent: 'center',
-    },
-    subtitle: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.7)',
-        textAlign: 'center',
-        marginBottom: 25,
-        justifyContent: 'center',
-    },
-    methodSelector: {
-        flexDirection: 'row',
-        marginBottom: 25,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 15,
-        padding: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)'
-    },
-    methodButton: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: 'center',
-        borderRadius: 12,
-        justifyContent: 'center',
-    },
-    methodButtonActive: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-    },
-    methodButtonText: {
-        fontSize: 16,
-        color: 'rgba(255,255,255,0.6)',
-        fontWeight: '600',
-        justifyContent: 'center',
-    },
-    methodButtonTextActive: {
-        color: COLORS.white,
-    },
-    inputGroup: {
-        marginBottom: 15,
-        justifyContent: 'center',
-    },
-    label: {
-        color: COLORS.white,
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 8,
-        marginLeft: 4
-    },
-    glassInput: {
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
-        borderRadius: 15,
-        paddingHorizontal: 15,
-        paddingVertical: 14,
-        fontSize: 16,
-        color: COLORS.white,
-    },
-    mainButton: {
-        backgroundColor: COLORS.white,
-        paddingVertical: 16,
-        borderRadius: 15,
-        alignItems: 'center',
-        marginTop: 15,
-        elevation: 5
-    },
-    buttonText: {
-        color: COLORS.forestDeep,
-        fontSize: 18,
-        fontWeight: 'bold'
-    },
-    divider: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 20
-    },
-    line: {
-        flex: 1,
-        height: 1,
-        backgroundColor: 'rgba(255,255,255,0.2)'
-    },
-    dividerText: {
-        marginHorizontal: 15,
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: 14
-    },
-    googleButton: {
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
-        paddingVertical: 15,
-        borderRadius: 15,
-        alignItems: 'center'
-    },
-    googleButtonText: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: '600'
-    },
-    footer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        marginTop: 25
-    },
-    footerText: {
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: 14
-    },
-    footerLink: {
-        color: COLORS.white,
-        fontSize: 14,
-        fontWeight: 'bold',
-        textDecorationLine: 'underline'
-    },
-});
