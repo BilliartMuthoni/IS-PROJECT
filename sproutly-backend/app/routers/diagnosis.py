@@ -1,14 +1,12 @@
-import os
-import uuid
-from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.classifier_stub import predict
 from app.core.config import settings
 from app.core.deps import get_current_user
+from app.core.image_intake import save_clean_image
 from app.core.knowledge_base import get_guidance
 from app.core.limiter import limiter
 from app.db.session import get_db
@@ -17,36 +15,6 @@ from app.models.user import User
 from app.schemas.diagnosis import DiagnosisListItem, DiagnosisResponse, Guidance
 
 router = APIRouter(prefix="/diagnose", tags=["diagnosis"])
-
-ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
-MAX_IMAGE_BYTES = 8 * 1024 * 1024  # 8 MB
-
-
-def _save_image(image: UploadFile) -> str:
-    if image.content_type not in ALLOWED_IMAGE_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only JPEG, PNG or WebP images are accepted",
-        )
-
-    contents = image.file.read()
-    if len(contents) > MAX_IMAGE_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Image is too large (maximum 8 MB)",
-        )
-
-    os.makedirs(settings.upload_dir, exist_ok=True)
-    extension = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[image.content_type]
-    # Generated name -- never trust the client-supplied filename for a path.
-    filename = f"{uuid.uuid4().hex}{extension}"
-    path = os.path.join(settings.upload_dir, filename)
-
-    with open(path, "wb") as handle:
-        handle.write(contents)
-
-    return path
-
 
 @router.post("", response_model=DiagnosisResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("20/minute")
@@ -58,7 +26,7 @@ def create_diagnosis(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    image_path = _save_image(image)
+    image_path = save_clean_image(image)
 
     disease, confidence = predict(crop, image_path, symptoms_text)
     is_referred = confidence < settings.confidence_threshold
