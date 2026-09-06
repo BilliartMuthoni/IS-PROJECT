@@ -52,10 +52,7 @@ export default function FarmerDashboard({ navigation }) {
     const hasHistory = PLACEHOLDER_RECENT.length > 0;
     const maxCropCount = Math.max(...PLACEHOLDER_STATS.byCrop.map((c) => c.count), 1);
 
-    const handleDiagnose = () => {
-        // TODO: navigate to DiagnosisScreen once it's built (next step).
-        Alert.alert('Coming next', 'The diagnosis screen is the next thing we build.');
-    };
+    const handleDiagnose = () => navigation.navigate('Diagnosis');
 
     const handleTalkToExpert = () => {
         // TODO: replace with the real referral contact flow.

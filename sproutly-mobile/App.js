@@ -17,6 +17,7 @@ import SplashScreen from './src/screens/SplashScreen.js';
 
 // Farmer Screens
 import FarmerDashboard from './src/screens/farmer/FarmerDashboard';
+import DiagnosisScreen from './src/screens/farmer/DiagnosisScreen';
 
 const Stack = createStackNavigator();
 
@@ -41,6 +42,7 @@ const RootNavigator = () => {
                     <>
                         {/*Farmer*/}
                         <Stack.Screen name="FarmerHome" component={FarmerDashboard} />
+                        <Stack.Screen name="Diagnosis" component={DiagnosisScreen} />
                     </>
                 )}
             </Stack.Navigator>
