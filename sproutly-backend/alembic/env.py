@@ -13,6 +13,7 @@ from app.db.session import Base
 
 #model import
 from app.models.user import User # type: ignore
+from app.models.diagnosis import Diagnosis # type: ignore
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

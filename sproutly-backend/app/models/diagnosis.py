@@ -1,0 +1,44 @@
+import enum
+from datetime import datetime, timezone
+
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    Boolean,
+    Float,
+    DateTime,
+    Text,
+    ForeignKey,
+    Enum as SqlEnum,
+)
+
+from app.db.session import Base
+
+
+class CropType(str, enum.Enum):
+    maize = "maize"
+    tomato = "tomato"
+    potato = "potato"
+
+
+class Diagnosis(Base):
+    __tablename__ = "diagnoses"
+
+    diagnosis_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+
+    crop = Column(SqlEnum(CropType, name="crop_type"), nullable=False)
+    image_path = Column(String, nullable=False)
+    symptoms_text = Column(Text, nullable=True)
+
+    # Null when the case was referred instead of diagnosed.
+    predicted_disease = Column(String, nullable=True)
+    confidence = Column(Float, nullable=False)
+    is_referred = Column(Boolean, nullable=False, default=False)
+
+    # Filled in once an extension officer responds to a referred case.
+    officer_response = Column(Text, nullable=True)
+    responded_at = Column(DateTime, nullable=True)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
