@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import './global.css';
 import React, { useContext } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -20,9 +20,16 @@ const Stack = createStackNavigator();
 
 // TODO: replace with the real FarmerDashboard once it's rebuilt
 function FarmerHomePlaceholder() {
+    const { logout } = useContext(AuthContext);
     return (
-        <View className="flex-1 items-center justify-center bg-white">
-            <Text className="text-lg font-bold text-forestDeep">Farmer Home (placeholder)</Text>
+        <View className="flex-1 items-center justify-center bg-white px-8">
+            <Text className="text-lg font-bold text-forestDeep mb-6">Farmer Home (placeholder)</Text>
+            <TouchableOpacity
+                className="bg-forestDeep py-3 px-6 rounded-xl"
+                onPress={logout}
+            >
+                <Text className="text-white font-semibold">Logout</Text>
+            </TouchableOpacity>
         </View>
     );
 }
