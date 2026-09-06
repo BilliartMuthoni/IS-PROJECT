@@ -21,6 +21,7 @@ export default function OTPScreen({ route, navigation }) {
     const { login } = useContext(AuthContext);
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
     const [resendTimer, setResendTimer] = useState(60);
     const [canResend, setCanResend] = useState(false);
     const inputRefs = useRef([]);
@@ -63,6 +64,22 @@ export default function OTPScreen({ route, navigation }) {
     const handleKeyPress = (index, key) => {
         if (key === 'Backspace' && !otp[index] && index > 0) {
             inputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handleResend = async () => {
+        setResending(true);
+        try {
+            await AuthService.resendOtp({ phoneNumber, email });
+            setOtp(['', '', '', '', '', '']);
+            inputRefs.current[0]?.focus();
+            setResendTimer(60);
+            setCanResend(false);
+            Alert.alert('Code sent', 'A new OTP has been sent.');
+        } catch (error) {
+            Alert.alert('Could not resend', error.message);
+        } finally {
+            setResending(false);
         }
     };
 
@@ -140,13 +157,15 @@ export default function OTPScreen({ route, navigation }) {
                         )}
                     </TouchableOpacity>
 
-                    <View className="mt-8">
+                    <View className="mt-8 items-center">
                         {!canResend ? (
                             <Text className="text-sm text-white/50">Resend code in {resendTimer}s</Text>
+                        ) : resending ? (
+                            <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <Text className="text-sm text-white/40 text-center px-6">
-                                Didn't get it? Go back and try again to request a new code.
-                            </Text>
+                            <TouchableOpacity onPress={handleResend}>
+                                <Text className="text-sm text-white font-bold underline">Resend OTP</Text>
+                            </TouchableOpacity>
                         )}
                     </View>
                 </View>

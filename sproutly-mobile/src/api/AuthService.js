@@ -41,6 +41,18 @@ export async function login({ phoneNumber, email, password }) {
     }
 }
 
+export async function resendOtp({ phoneNumber, email }) {
+    try {
+        const payload = {};
+        if (phoneNumber) payload.phone_number = phoneNumber;
+        if (email) payload.email = email;
+        const { data } = await client.post('/auth/resend-otp', payload);
+        return data;
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
+}
+
 export async function verifyOtp({ phoneNumber, email, otp }) {
     try {
         const payload = { otp };
