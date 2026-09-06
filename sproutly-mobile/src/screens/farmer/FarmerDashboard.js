@@ -5,16 +5,24 @@ import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../context/AuthContext';
 
-// TODO: replace with real data once the /diagnose endpoint and diagnoses table exist.
+// TODO: all placeholder until the /diagnose endpoint and diagnoses table exist.
 const PLACEHOLDER_STATS = {
     total: 7,
     referred: 2,
-    mostCommon: { name: 'Tomato Late Blight', count: 3 },
+    recurring: { name: 'Tomato Late Blight', count: 3 },
     byCrop: [
         { crop: 'Tomato', count: 5 },
         { crop: 'Maize', count: 2 },
         { crop: 'Potato', count: 0 },
     ],
+};
+
+const PLACEHOLDER_NEXT_ACTION = {
+    crop: 'Tomato',
+    disease: 'Late Blight',
+    task: 'Second fungicide spray',
+    due: 'Due today',
+    overdue: false,
 };
 
 const PLACEHOLDER_RECENT = [
@@ -25,14 +33,23 @@ const PLACEHOLDER_RECENT = [
 
 const PLACEHOLDER_PENDING_REFERRALS = 1;
 
+const COLORS = {
+    brand: '#1B4332',
+    brandLight: '#2D5A43',
+    attention: '#B4622A',
+    expert: '#3A6EA5',
+    healthy: '#2F7D4F',
+};
+
 const STATUS_STYLES = {
-    diagnosed: { icon: 'alert-circle', color: '#B4622A', label: 'Diagnosed' },
-    referred: { icon: 'account-tie', color: '#3A6EA5', label: 'With expert' },
-    healthy: { icon: 'leaf', color: '#2F7D4F', label: 'Healthy' },
+    diagnosed: { icon: 'alert-circle-outline', color: COLORS.attention, label: 'Treating' },
+    referred: { icon: 'account-tie', color: COLORS.expert, label: 'With expert' },
+    healthy: { icon: 'leaf', color: COLORS.healthy, label: 'Healthy' },
 };
 
 export default function FarmerDashboard({ navigation }) {
     const { logout } = useContext(AuthContext);
+    const hasHistory = PLACEHOLDER_RECENT.length > 0;
     const maxCropCount = Math.max(...PLACEHOLDER_STATS.byCrop.map((c) => c.count), 1);
 
     const handleDiagnose = () => {
@@ -40,12 +57,17 @@ export default function FarmerDashboard({ navigation }) {
         Alert.alert('Coming next', 'The diagnosis screen is the next thing we build.');
     };
 
+    const handleTalkToExpert = () => {
+        // TODO: replace with the real referral contact flow.
+        Alert.alert('Coming soon', 'Contact details for extension officers go here.');
+    };
+
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F6F8F5' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F7F4' }}>
             <StatusBar style="dark" />
             <ScrollView contentContainerClassName="pb-10">
                 {/* Header */}
-                <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+                <View className="flex-row items-center justify-between px-5 pt-4 pb-3">
                     <View>
                         <Text className="text-2xl font-bold text-forestDeep">Sproutly</Text>
                         <Text className="text-sm text-gray-500">Your crop health at a glance</Text>
@@ -54,12 +76,12 @@ export default function FarmerDashboard({ navigation }) {
                         onPress={logout}
                         className="w-10 h-10 rounded-full bg-white border border-gray-200 items-center justify-center"
                     >
-                        <Ionicons name="log-out-outline" size={20} color="#1B4332" />
+                        <Ionicons name="log-out-outline" size={20} color={COLORS.brand} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Primary action */}
-                <View className="px-5 mt-3">
+                <View className="px-5">
                     <TouchableOpacity
                         onPress={handleDiagnose}
                         activeOpacity={0.85}
@@ -71,32 +93,68 @@ export default function FarmerDashboard({ navigation }) {
                         <View className="flex-1">
                             <Text className="text-white text-xl font-bold">Diagnose a crop</Text>
                             <Text className="text-white/70 text-sm mt-0.5">
-                                Take a photo of the affected leaf
+                                Fill the frame with one affected leaf
                             </Text>
                         </View>
                         <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.7)" />
                     </TouchableOpacity>
 
-                    <Text className="text-xs text-gray-500 mt-2 ml-1">
-                        Works with maize, tomato and potato
-                    </Text>
+                    {!hasHistory && (
+                        <Text className="text-xs text-gray-500 mt-2 ml-1">
+                            Works with maize, tomato and potato
+                        </Text>
+                    )}
                 </View>
 
-                {/* Pending referral notice */}
+                {/* Next action -- only when a treatment is in progress */}
+                {PLACEHOLDER_NEXT_ACTION && (
+                    <View className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                        <View
+                            className="px-5 py-4 flex-row items-center"
+                            style={{ borderLeftWidth: 3, borderLeftColor: COLORS.attention }}
+                        >
+                            <View className="flex-1">
+                                <Text className="text-xs font-semibold text-gray-500 mb-1">NEXT ACTION</Text>
+                                <Text className="text-base font-bold text-gray-800">
+                                    {PLACEHOLDER_NEXT_ACTION.task}
+                                </Text>
+                                <Text className="text-sm text-gray-500 mt-0.5">
+                                    {PLACEHOLDER_NEXT_ACTION.crop} · {PLACEHOLDER_NEXT_ACTION.disease}
+                                </Text>
+                            </View>
+                            <View
+                                className="px-3 py-1.5 rounded-full"
+                                style={{ backgroundColor: `${COLORS.attention}1A` }}
+                            >
+                                <Text className="text-xs font-bold" style={{ color: COLORS.attention }}>
+                                    {PLACEHOLDER_NEXT_ACTION.due}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                )}
+
+                {/* Pending referral -- only when one is open */}
                 {PLACEHOLDER_PENDING_REFERRALS > 0 && (
-                    <View className="mx-5 mt-4 bg-[#EAF1F8] border border-[#CBDDF0] rounded-xl p-4 flex-row items-center">
-                        <MaterialCommunityIcons name="account-tie" size={22} color="#3A6EA5" />
-                        <Text className="flex-1 ml-3 text-sm text-[#25446A]">
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={handleTalkToExpert}
+                        className="mx-5 mt-3 bg-white rounded-2xl border border-gray-200 px-5 py-4 flex-row items-center"
+                        style={{ borderLeftWidth: 3, borderLeftColor: COLORS.expert }}
+                    >
+                        <MaterialCommunityIcons name="account-tie" size={22} color={COLORS.expert} />
+                        <Text className="flex-1 ml-3 text-sm text-gray-700">
                             {PLACEHOLDER_PENDING_REFERRALS} case waiting on an extension officer
                         </Text>
-                    </View>
+                        <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                    </TouchableOpacity>
                 )}
 
                 {/* Sample-data notice */}
                 <View className="mx-5 mt-6 mb-2 flex-row items-center">
                     <Ionicons name="information-circle-outline" size={14} color="#8A9690" />
                     <Text className="text-xs text-gray-500 ml-1">
-                        Example data — real results appear after your first diagnosis
+                        Example data — real results appear after your first check
                     </Text>
                 </View>
 
@@ -110,22 +168,13 @@ export default function FarmerDashboard({ navigation }) {
                             <Text className="text-xs text-gray-500 mt-0.5">Crops checked</Text>
                         </View>
                         <View className="flex-1">
-                            <Text className="text-3xl font-bold text-[#3A6EA5]">{PLACEHOLDER_STATS.referred}</Text>
+                            <Text className="text-3xl font-bold" style={{ color: COLORS.expert }}>
+                                {PLACEHOLDER_STATS.referred}
+                            </Text>
                             <Text className="text-xs text-gray-500 mt-0.5">Sent to an expert</Text>
                         </View>
                     </View>
 
-                    <View className="bg-[#FBF1E9] rounded-xl p-3 mb-5">
-                        <Text className="text-xs text-gray-500">Keeps coming back</Text>
-                        <Text className="text-sm font-bold text-[#8F4E22] mt-0.5">
-                            {PLACEHOLDER_STATS.mostCommon.name} · {PLACEHOLDER_STATS.mostCommon.count} times
-                        </Text>
-                        <Text className="text-xs text-[#8F4E22]/80 mt-1">
-                            Repeat cases often point to drainage, spacing or infected seed
-                        </Text>
-                    </View>
-
-                    <Text className="text-xs font-semibold text-gray-500 mb-3">BY CROP</Text>
                     {PLACEHOLDER_STATS.byCrop.map((item) => (
                         <View key={item.crop} className="mb-3">
                             <View className="flex-row justify-between mb-1">
@@ -134,17 +183,35 @@ export default function FarmerDashboard({ navigation }) {
                             </View>
                             <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
                                 <View
-                                    className="h-full bg-forestLight rounded-full"
-                                    style={{ width: `${(item.count / maxCropCount) * 100}%` }}
+                                    className="h-full rounded-full"
+                                    style={{
+                                        width: `${(item.count / maxCropCount) * 100}%`,
+                                        backgroundColor: COLORS.brandLight,
+                                    }}
                                 />
                             </View>
                         </View>
                     ))}
+
+                    {PLACEHOLDER_STATS.recurring.count > 2 && (
+                        <View className="mt-3 pt-4 border-t border-gray-100 flex-row">
+                            <MaterialCommunityIcons name="repeat-variant" size={18} color={COLORS.attention} />
+                            <View className="flex-1 ml-2">
+                                <Text className="text-sm font-semibold text-gray-800">
+                                    {PLACEHOLDER_STATS.recurring.name} keeps returning
+                                </Text>
+                                <Text className="text-xs text-gray-500 mt-0.5">
+                                    {PLACEHOLDER_STATS.recurring.count} times this season — often a sign of drainage,
+                                    spacing or infected seed rather than bad luck
+                                </Text>
+                            </View>
+                        </View>
+                    )}
                 </View>
 
                 {/* Recent activity */}
-                <View className="mx-5 mt-5 bg-white rounded-2xl border border-gray-200 p-5">
-                    <Text className="text-base font-bold text-forestDeep mb-4">Recent checks</Text>
+                <View className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 p-5">
+                    <Text className="text-base font-bold text-forestDeep mb-3">Recent checks</Text>
 
                     {PLACEHOLDER_RECENT.map((item, index) => {
                         const style = STATUS_STYLES[item.status];
@@ -173,6 +240,22 @@ export default function FarmerDashboard({ navigation }) {
                         );
                     })}
                 </View>
+
+                {/* Secondary action */}
+                <TouchableOpacity
+                    onPress={handleTalkToExpert}
+                    activeOpacity={0.8}
+                    className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 px-5 py-4 flex-row items-center"
+                >
+                    <MaterialCommunityIcons name="phone-outline" size={20} color={COLORS.brand} />
+                    <View className="flex-1 ml-3">
+                        <Text className="text-sm font-semibold text-gray-800">Talk to an extension officer</Text>
+                        <Text className="text-xs text-gray-500 mt-0.5">
+                            County offices, agrovets and the national hotline
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
     );
