@@ -93,8 +93,9 @@ export default function OTPScreen({ route, navigation }) {
         setLoading(true);
         try {
             const data = await AuthService.verifyOtp({ phoneNumber, email, otp: otpString });
+            // No manual navigation needed -- RootNavigator swaps to the app stack
+            // automatically once userToken is set.
             await login(data.access_token, [data.role], data.refresh_token);
-            navigation.replace('FarmerHome');
         } catch (error) {
             Alert.alert('Verification Failed', error.message);
             setOtp(['', '', '', '', '', '']);
