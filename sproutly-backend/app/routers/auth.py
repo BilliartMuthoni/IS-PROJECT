@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.email import send_otp_email
 from app.core.limiter import limiter
 from app.core.security import (
     hash_password,
@@ -36,13 +37,17 @@ def _get_user_by_identifier(db: Session, phone_number: Optional[str], email: Opt
     return query.filter(User.user_email == email).first()
 
 
-def _issue_and_store_otp(db: Session, user: User) -> None:
+def _issue_and_store_otp(db: Session, user: User, background_tasks: BackgroundTasks) -> None:
     otp = generate_otp()
     user.hashed_otp = hash_otp(otp)
     user.otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.otp_expire_minutes)
     db.commit()
 
-    # Mock delivery for development. Replace with a real SMS gateway
+    if user.user_email:
+        # Sent in the background so the caller isn't left waiting on SMTP.
+        background_tasks.add_task(send_otp_email, user.user_email, otp)
+
+    # SMS delivery is still mocked -- replace with a real gateway
     # (e.g. Africa's Talking) before production use.
     identifier = user.user_phone_number or user.user_email
     print(f"[MOCK OTP] sending to {identifier}: {otp}")
@@ -50,7 +55,7 @@ def _issue_and_store_otp(db: Session, user: User) -> None:
 
 @router.post("/register", response_model=OtpSentResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-def register(request: Request, payload: RegisterRequest, db: Session = Depends(get_db)):
+def register(request: Request, payload: RegisterRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     existing = _get_user_by_identifier(db, payload.phone_number, payload.email)
     if existing:
         raise HTTPException(
@@ -67,7 +72,7 @@ def register(request: Request, payload: RegisterRequest, db: Session = Depends(g
     db.commit()
     db.refresh(user)
 
-    _issue_and_store_otp(db, user)
+    _issue_and_store_otp(db, user, background_tasks)
     return OtpSentResponse(
         message="Account created. An OTP has been sent for verification.",
         expires_in_minutes=settings.otp_expire_minutes,
@@ -76,13 +81,13 @@ def register(request: Request, payload: RegisterRequest, db: Session = Depends(g
 
 @router.post("/login", response_model=OtpSentResponse)
 @limiter.limit("5/minute")
-def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
+def login(request: Request, payload: LoginRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     user = _get_user_by_identifier(db, payload.phone_number, payload.email)
     if not user or not user.hashed_password or not verify_password(payload.password, user.hashed_password):
         # Same error for "no such user" and "wrong password" -- never reveal which one.
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    _issue_and_store_otp(db, user)
+    _issue_and_store_otp(db, user, background_tasks)
     return OtpSentResponse(
         message="OTP sent for verification.",
         expires_in_minutes=settings.otp_expire_minutes,
@@ -91,7 +96,7 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
 
 @router.post("/resend-otp", response_model=OtpSentResponse)
 @limiter.limit("5/minute")
-def resend_otp(request: Request, payload: ResendOtpRequest, db: Session = Depends(get_db)):
+def resend_otp(request: Request, payload: ResendOtpRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     user = _get_user_by_identifier(db, payload.phone_number, payload.email)
     # Only allow a resend if there's an actual pending (unverified) OTP --
     # otherwise this endpoint would let anyone spam OTPs to any phone number
@@ -103,7 +108,7 @@ def resend_otp(request: Request, payload: ResendOtpRequest, db: Session = Depend
             detail="No pending verification found. Please try logging in again.",
         )
 
-    _issue_and_store_otp(db, user)
+    _issue_and_store_otp(db, user, background_tasks)
     return OtpSentResponse(
         message="A new OTP has been sent.",
         expires_in_minutes=settings.otp_expire_minutes,

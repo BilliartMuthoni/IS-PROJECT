@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -13,10 +13,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthContext } from '../../context/AuthContext';
+import * as AuthService from '../../api/AuthService';
 
 export default function SignUpScreen({ navigation }) {
-    const { login } = useContext(AuthContext); // Using your AuthContext "Brain"
     const [authMethod, setAuthMethod] = useState('phone'); // 'phone' or 'email'
     const [phoneNumber, setPhoneNumber] = useState('');
     const [email, setEmail] = useState('');
@@ -27,21 +26,18 @@ export default function SignUpScreen({ navigation }) {
     const handleSignUpSubmit = async () => {
         setLoading(true);
         try {
+            if (!password || !confirmPassword) throw new Error("Please fill in all fields.");
+            if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+            if (password !== confirmPassword) throw new Error("Passwords do not match.");
+
             if (authMethod === 'phone') {
                 if (phoneNumber.length < 9) throw new Error("Please enter a valid Kenyan phone number.");
-
-                // This will later call your Flask/Node API for OTP
-                // navigation.navigate('OTP', { phoneNumber, isSignUp: true });
-                console.log("Phone Sign Up for:", phoneNumber);
+                await AuthService.register({ phoneNumber, password });
+                navigation.navigate('OTP', { phoneNumber, isSignUp: true });
             } else {
-                if (!email || !password || !confirmPassword) throw new Error("Please fill in all fields.");
-                if (password !== confirmPassword) throw new Error("Passwords do not match.");
-
-                // SIMULATED POSTGRES CALL: Later axios.post(`${API_URL}/auth/signup`, { email, password })
-                console.log("Registering with Email:", email);
-
-                // After successful DB entry, we "login" to flip the token switch
-                login("mock-postgres-token");
+                if (!email) throw new Error("Please enter your email.");
+                await AuthService.register({ email, password });
+                navigation.navigate('OTP', { email, isSignUp: true });
             }
         } catch (error) {
             Alert.alert('Sign Up Error', error.message);
@@ -51,7 +47,7 @@ export default function SignUpScreen({ navigation }) {
     };
 
     return (
-        <LinearGradient colors={['#0B1A13', '#1B3D2F', '#2D5A43']} className="flex-1">
+        <LinearGradient colors={['#0B1A13', '#1B3D2F', '#2D5A43']} style={{ flex: 1 }}>
             <StatusBar style="light" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -107,42 +103,42 @@ export default function SignUpScreen({ navigation }) {
                                     />
                                 </View>
                             ) : (
-                                <>
-                                    <View className="mb-4">
-                                        <Text className="text-white text-sm font-semibold mb-2 ml-1">Email Address</Text>
-                                        <TextInput
-                                            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
-                                            placeholder="farmer@sproutly.com"
-                                            placeholderTextColor="rgba(255,255,255,0.4)"
-                                            autoCapitalize="none"
-                                            value={email}
-                                            onChangeText={setEmail}
-                                        />
-                                    </View>
-                                    <View className="mb-4">
-                                        <Text className="text-white text-sm font-semibold mb-2 ml-1">Password</Text>
-                                        <TextInput
-                                            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
-                                            placeholder="••••••••"
-                                            placeholderTextColor="rgba(255,255,255,0.4)"
-                                            secureTextEntry
-                                            value={password}
-                                            onChangeText={setPassword}
-                                        />
-                                    </View>
-                                    <View className="mb-4">
-                                        <Text className="text-white text-sm font-semibold mb-2 ml-1">Confirm Password</Text>
-                                        <TextInput
-                                            className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
-                                            placeholder="••••••••"
-                                            placeholderTextColor="rgba(255,255,255,0.4)"
-                                            secureTextEntry
-                                            value={confirmPassword}
-                                            onChangeText={setConfirmPassword}
-                                        />
-                                    </View>
-                                </>
+                                <View className="mb-4">
+                                    <Text className="text-white text-sm font-semibold mb-2 ml-1">Email Address</Text>
+                                    <TextInput
+                                        className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
+                                        placeholder="farmer@sproutly.com"
+                                        placeholderTextColor="rgba(255,255,255,0.4)"
+                                        autoCapitalize="none"
+                                        keyboardType="email-address"
+                                        value={email}
+                                        onChangeText={setEmail}
+                                    />
+                                </View>
                             )}
+
+                            <View className="mb-4">
+                                <Text className="text-white text-sm font-semibold mb-2 ml-1">Password</Text>
+                                <TextInput
+                                    className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
+                                    placeholder="At least 8 characters"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                    secureTextEntry
+                                    value={password}
+                                    onChangeText={setPassword}
+                                />
+                            </View>
+                            <View className="mb-4">
+                                <Text className="text-white text-sm font-semibold mb-2 ml-1">Confirm Password</Text>
+                                <TextInput
+                                    className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
+                                    placeholder="••••••••"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                    secureTextEntry
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                />
+                            </View>
 
                             <TouchableOpacity
                                 className={`bg-white py-4 rounded-2xl items-center mt-4 shadow-lg ${loading ? 'opacity-70' : ''}`}

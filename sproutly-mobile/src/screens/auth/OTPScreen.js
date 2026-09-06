@@ -13,12 +13,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../context/AuthContext';
+import * as AuthService from '../../api/AuthService';
 
 export default function OTPScreen({ route, navigation }) {
-    const { phoneNumber, isSignUp } = route.params;
+    const { phoneNumber, email } = route.params;
+    const identifierLabel = phoneNumber || email;
     const { login } = useContext(AuthContext);
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
+    const [resending, setResending] = useState(false);
     const [resendTimer, setResendTimer] = useState(60);
     const [canResend, setCanResend] = useState(false);
     const inputRefs = useRef([]);
@@ -64,6 +67,22 @@ export default function OTPScreen({ route, navigation }) {
         }
     };
 
+    const handleResend = async () => {
+        setResending(true);
+        try {
+            await AuthService.resendOtp({ phoneNumber, email });
+            setOtp(['', '', '', '', '', '']);
+            inputRefs.current[0]?.focus();
+            setResendTimer(60);
+            setCanResend(false);
+            Alert.alert('Code sent', 'A new OTP has been sent.');
+        } catch (error) {
+            Alert.alert('Could not resend', error.message);
+        } finally {
+            setResending(false);
+        }
+    };
+
     const handleVerifyOTP = async () => {
         const otpString = otp.join('');
         if (otpString.length !== 6) {
@@ -73,15 +92,12 @@ export default function OTPScreen({ route, navigation }) {
 
         setLoading(true);
         try {
-            // Logic for PostgreSQL backend verification would go here
-            // const response = await axios.post(`${API_URL}/verify-otp`, { phoneNumber, otpString });
-
-            console.log("Verifying OTP:", otpString);
-
-            login("actual-verified-token");
-            navigation.replace('FarmerHome');
+            const data = await AuthService.verifyOtp({ phoneNumber, email, otp: otpString });
+            // No manual navigation needed -- RootNavigator swaps to the app stack
+            // automatically once userToken is set.
+            await login(data.access_token, [data.role], data.refresh_token);
         } catch (error) {
-            Alert.alert('Verification Failed', 'Invalid code. Please try again.');
+            Alert.alert('Verification Failed', error.message);
             setOtp(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
         } finally {
@@ -90,7 +106,7 @@ export default function OTPScreen({ route, navigation }) {
     };
 
     return (
-        <LinearGradient colors={['#0B1A13', '#1B3D2F', '#2D5A43']} className="flex-1">
+        <LinearGradient colors={['#0B1A13', '#1B3D2F', '#2D5A43']} style={{ flex: 1 }}>
             <StatusBar style="light" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -110,7 +126,7 @@ export default function OTPScreen({ route, navigation }) {
                     <Ionicons name="shield-checkmark" size={32} color="#FFFFFF" style={{ marginBottom: 10 }} />
                     <Text className="text-2xl font-bold text-white mb-2.5 text-center">Verification</Text>
                     <Text className="text-base text-white/70 text-center">Enter the 6-digit code sent to</Text>
-                    <Text className="text-lg font-bold text-white mb-10 text-center">{phoneNumber}</Text>
+                    <Text className="text-lg font-bold text-white mb-10 text-center">{identifierLabel}</Text>
 
                     <View className="flex-row justify-between w-full mb-10">
                         {otp.map((digit, index) => (
@@ -142,11 +158,13 @@ export default function OTPScreen({ route, navigation }) {
                         )}
                     </TouchableOpacity>
 
-                    <View className="mt-8">
+                    <View className="mt-8 items-center">
                         {!canResend ? (
                             <Text className="text-sm text-white/50">Resend code in {resendTimer}s</Text>
+                        ) : resending ? (
+                            <ActivityIndicator color="#FFFFFF" />
                         ) : (
-                            <TouchableOpacity onPress={() => { setResendTimer(60); setCanResend(false); }}>
+                            <TouchableOpacity onPress={handleResend}>
                                 <Text className="text-sm text-white font-bold underline">Resend OTP</Text>
                             </TouchableOpacity>
                         )}

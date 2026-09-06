@@ -1,6 +1,7 @@
+import 'react-native-gesture-handler';
 import './global.css';
 import React, { useContext } from 'react';
-import { View, Text } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthContext, AuthProvider } from './src/context/AuthContext';
@@ -14,16 +15,12 @@ import OTPScreen from './src/screens/auth/OTPScreen';
 // Splash Screen
 import SplashScreen from './src/screens/SplashScreen.js';
 
-const Stack = createStackNavigator();
+// Farmer Screens
+import FarmerDashboard from './src/screens/farmer/FarmerDashboard';
+import DiagnosisScreen from './src/screens/farmer/DiagnosisScreen';
+import ResultScreen from './src/screens/farmer/ResultScreen';
 
-// TODO: replace with the real FarmerDashboard once it's rebuilt
-function FarmerHomePlaceholder() {
-    return (
-        <View className="flex-1 items-center justify-center bg-white">
-            <Text className="text-lg font-bold text-forestDeep">Farmer Home (placeholder)</Text>
-        </View>
-    );
-}
+const Stack = createStackNavigator();
 
 const RootNavigator = () => {
     const { userToken, isLoading } = useContext(AuthContext);
@@ -45,7 +42,9 @@ const RootNavigator = () => {
                 ) : (
                     <>
                         {/*Farmer*/}
-                        <Stack.Screen name="FarmerHome" component={FarmerHomePlaceholder} />
+                        <Stack.Screen name="FarmerHome" component={FarmerDashboard} />
+                        <Stack.Screen name="Diagnosis" component={DiagnosisScreen} />
+                        <Stack.Screen name="Result" component={ResultScreen} />
                     </>
                 )}
             </Stack.Navigator>
@@ -55,8 +54,10 @@ const RootNavigator = () => {
 
 export default function App() {
     return (
-        <AuthProvider>
-            <RootNavigator />
-        </AuthProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <AuthProvider>
+                <RootNavigator />
+            </AuthProvider>
+        </GestureHandlerRootView>
     );
 }

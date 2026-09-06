@@ -17,10 +17,10 @@ export default function LandingScreen({ navigation }) {
     return (
         <LinearGradient
             colors={['#0B1A13', '#1B3D2F', '#2D5A43']}
-            className="flex-1"
+            style={{ flex: 1 }}
         >
             <StatusBar style="light" />
-            <SafeAreaView className="flex-1">
+            <SafeAreaView style={{ flex: 1 }}>
                 <View className="flex-1 justify-between px-8 pt-8 pb-12">
                     {/* Logo/Icon Area */}
                     <View className="items-center">
