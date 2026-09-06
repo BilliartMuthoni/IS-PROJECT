@@ -1,7 +1,6 @@
 import 'react-native-gesture-handler';
 import './global.css';
 import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -16,23 +15,10 @@ import OTPScreen from './src/screens/auth/OTPScreen';
 // Splash Screen
 import SplashScreen from './src/screens/SplashScreen.js';
 
-const Stack = createStackNavigator();
+// Farmer Screens
+import FarmerDashboard from './src/screens/farmer/FarmerDashboard';
 
-// TODO: replace with the real FarmerDashboard once it's rebuilt
-function FarmerHomePlaceholder() {
-    const { logout } = useContext(AuthContext);
-    return (
-        <View className="flex-1 items-center justify-center bg-white px-8">
-            <Text className="text-lg font-bold text-forestDeep mb-6">Farmer Home (placeholder)</Text>
-            <TouchableOpacity
-                className="bg-forestDeep py-3 px-6 rounded-xl"
-                onPress={logout}
-            >
-                <Text className="text-white font-semibold">Logout</Text>
-            </TouchableOpacity>
-        </View>
-    );
-}
+const Stack = createStackNavigator();
 
 const RootNavigator = () => {
     const { userToken, isLoading } = useContext(AuthContext);
@@ -54,7 +40,7 @@ const RootNavigator = () => {
                 ) : (
                     <>
                         {/*Farmer*/}
-                        <Stack.Screen name="FarmerHome" component={FarmerHomePlaceholder} />
+                        <Stack.Screen name="FarmerHome" component={FarmerDashboard} />
                     </>
                 )}
             </Stack.Navigator>
