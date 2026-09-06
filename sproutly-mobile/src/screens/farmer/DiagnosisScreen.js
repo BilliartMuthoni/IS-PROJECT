@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     View,
     Text,
@@ -15,6 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { AuthContext } from '../../context/AuthContext';
+import { submitDiagnosis } from '../../api/DiagnosisService';
 
 const CROPS = [
     { id: 'maize', label: 'Maize', icon: 'corn' },
@@ -29,6 +31,7 @@ const COLORS = {
 };
 
 export default function DiagnosisScreen({ navigation }) {
+    const { userToken } = useContext(AuthContext);
     const [crop, setCrop] = useState(null);
     const [image, setImage] = useState(null);
     const [symptoms, setSymptoms] = useState('');
@@ -90,12 +93,13 @@ export default function DiagnosisScreen({ navigation }) {
 
         setSubmitting(true);
         try {
-            // TODO: send to the /diagnose endpoint once it exists (next step).
-            await new Promise((resolve) => setTimeout(resolve, 800));
-            Alert.alert(
-                'Coming next',
-                'The /diagnose endpoint is the next thing we build. Your photo and notes are ready to send.'
-            );
+            const result = await submitDiagnosis({
+                token: userToken,
+                crop,
+                imageUri: image.uri,
+                symptoms,
+            });
+            navigation.navigate('Result', { result, imageUri: image.uri });
         } catch (error) {
             Alert.alert('Could not send', error.message);
         } finally {
