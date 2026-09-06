@@ -14,6 +14,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as AuthService from '../../api/AuthService';
+import { toFriendlyError } from '../../utils/errorMessages';
+import ErrorBanner from '../../components/ErrorBanner';
 
 export default function SignUpScreen({ navigation }) {
     const [authMethod, setAuthMethod] = useState('phone'); // 'phone' or 'email'
@@ -21,26 +23,41 @@ export default function SignUpScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleSignUpSubmit = async () => {
+        setError(null);
+
+        if (authMethod === 'phone' && phoneNumber.trim().length < 9) {
+            setError({ title: 'Check your phone number', message: 'It looks too short. Enter it like 0712345678.', retryable: false });
+            return;
+        }
+        if (authMethod === 'email' && !email.trim()) {
+            setError({ title: 'Email needed', message: 'Enter an email address we can send your code to.', retryable: false });
+            return;
+        }
+        if (password.length < 8) {
+            setError({ title: 'Password too short', message: 'Use at least 8 characters so your account stays secure.', retryable: false });
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError({ title: 'Passwords do not match', message: 'Type the same password in both boxes.', retryable: false });
+            return;
+        }
+
         setLoading(true);
         try {
-            if (!password || !confirmPassword) throw new Error("Please fill in all fields.");
-            if (password.length < 8) throw new Error("Password must be at least 8 characters.");
-            if (password !== confirmPassword) throw new Error("Passwords do not match.");
-
             if (authMethod === 'phone') {
-                if (phoneNumber.length < 9) throw new Error("Please enter a valid Kenyan phone number.");
                 await AuthService.register({ phoneNumber, password });
                 navigation.navigate('OTP', { phoneNumber, isSignUp: true });
             } else {
-                if (!email) throw new Error("Please enter your email.");
                 await AuthService.register({ email, password });
                 navigation.navigate('OTP', { email, isSignUp: true });
             }
-        } catch (error) {
-            Alert.alert('Sign Up Error', error.message);
+        } catch (e) {
+            setError(toFriendlyError(e));
         } finally {
             setLoading(false);
         }
@@ -119,14 +136,26 @@ export default function SignUpScreen({ navigation }) {
 
                             <View className="mb-4">
                                 <Text className="text-white text-sm font-semibold mb-2 ml-1">Password</Text>
-                                <TextInput
-                                    className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
-                                    placeholder="At least 8 characters"
-                                    placeholderTextColor="rgba(255,255,255,0.4)"
-                                    secureTextEntry
-                                    value={password}
-                                    onChangeText={setPassword}
-                                />
+                                <View className="flex-row items-center bg-white/10 border border-white/20 rounded-2xl px-4">
+                                    <TextInput
+                                        className="flex-1 py-3.5 text-base text-white"
+                                        placeholder="At least 8 characters"
+                                        placeholderTextColor="rgba(255,255,255,0.4)"
+                                        secureTextEntry={!showPassword}
+                                        value={password}
+                                        onChangeText={setPassword}
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword((v) => !v)}
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Ionicons
+                                            name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                            size={20}
+                                            color="rgba(255,255,255,0.6)"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                             <View className="mb-4">
                                 <Text className="text-white text-sm font-semibold mb-2 ml-1">Confirm Password</Text>
@@ -134,11 +163,17 @@ export default function SignUpScreen({ navigation }) {
                                     className="bg-white/10 border border-white/20 rounded-2xl px-4 py-3.5 text-base text-white"
                                     placeholder="••••••••"
                                     placeholderTextColor="rgba(255,255,255,0.4)"
-                                    secureTextEntry
+                                    secureTextEntry={!showPassword}
                                     value={confirmPassword}
                                     onChangeText={setConfirmPassword}
                                 />
                             </View>
+
+                            {error && (
+                                <View className="mb-4">
+                                    <ErrorBanner error={error} tone="dark" onDismiss={() => setError(null)} />
+                                </View>
+                            )}
 
                             <TouchableOpacity
                                 className={`bg-white py-4 rounded-2xl items-center mt-4 shadow-lg ${loading ? 'opacity-70' : ''}`}

@@ -41,6 +41,17 @@ export async function login({ phoneNumber, email, password }) {
     }
 }
 
+export async function fetchCurrentUser({ token }) {
+    try {
+        const { data } = await client.get('/auth/me', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        return data;
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
+}
+
 export async function resendOtp({ phoneNumber, email }) {
     try {
         const payload = {};

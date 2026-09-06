@@ -1,9 +1,8 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { AuthContext } from '../../context/AuthContext';
 
 // TODO: all placeholder until the /diagnose endpoint and diagnoses table exist.
 const PLACEHOLDER_STATS = {
@@ -48,7 +47,6 @@ const STATUS_STYLES = {
 };
 
 export default function FarmerDashboard({ navigation }) {
-    const { logout } = useContext(AuthContext);
     const hasHistory = PLACEHOLDER_RECENT.length > 0;
     const maxCropCount = Math.max(...PLACEHOLDER_STATS.byCrop.map((c) => c.count), 1);
 
@@ -70,10 +68,10 @@ export default function FarmerDashboard({ navigation }) {
                         <Text className="text-sm text-gray-500">Your crop health at a glance</Text>
                     </View>
                     <TouchableOpacity
-                        onPress={logout}
+                        onPress={() => navigation.navigate('Profile')}
                         className="w-10 h-10 rounded-full bg-white border border-gray-200 items-center justify-center"
                     >
-                        <Ionicons name="log-out-outline" size={20} color={COLORS.brand} />
+                        <Ionicons name="person-outline" size={20} color={COLORS.brand} />
                     </TouchableOpacity>
                 </View>
 

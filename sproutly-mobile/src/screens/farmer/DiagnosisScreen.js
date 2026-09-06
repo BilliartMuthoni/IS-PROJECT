@@ -17,6 +17,8 @@ import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../../context/AuthContext';
 import { submitDiagnosis } from '../../api/DiagnosisService';
+import { toFriendlyError } from '../../utils/errorMessages';
+import ErrorBanner from '../../components/ErrorBanner';
 
 const CROPS = [
     { id: 'maize', label: 'Maize', icon: 'corn' },
@@ -36,6 +38,7 @@ export default function DiagnosisScreen({ navigation }) {
     const [image, setImage] = useState(null);
     const [symptoms, setSymptoms] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState(null);
 
     const pickFromCamera = async () => {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -47,9 +50,10 @@ export default function DiagnosisScreen({ navigation }) {
             return;
         }
         const result = await ImagePicker.launchCameraAsync({
+            // No allowsEditing: the native crop tool has no clear "done" step,
+            // so cropping silently doubles as confirmation. The photo comes
+            // straight into our own preview, which has explicit Replace/Remove.
             mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
             quality: 0.8,
         });
         if (!result.canceled) setImage(result.assets[0]);
@@ -65,9 +69,10 @@ export default function DiagnosisScreen({ navigation }) {
             return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
+            // No allowsEditing: the native crop tool has no clear "done" step,
+            // so cropping silently doubles as confirmation. The photo comes
+            // straight into our own preview, which has explicit Replace/Remove.
             mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
             quality: 0.8,
         });
         if (!result.canceled) setImage(result.assets[0]);
@@ -82,15 +87,7 @@ export default function DiagnosisScreen({ navigation }) {
     };
 
     const handleSubmit = async () => {
-        if (!crop) {
-            Alert.alert('Choose a crop', 'Tell us which crop this is so we can check the right diseases.');
-            return;
-        }
-        if (!image) {
-            Alert.alert('Add a photo', 'A photo of the affected leaf is needed to make a diagnosis.');
-            return;
-        }
-
+        setError(null);
         setSubmitting(true);
         try {
             const result = await submitDiagnosis({
@@ -100,8 +97,8 @@ export default function DiagnosisScreen({ navigation }) {
                 symptoms,
             });
             navigation.navigate('Result', { result, imageUri: image.uri });
-        } catch (error) {
-            Alert.alert('Could not send', error.message);
+        } catch (e) {
+            setError(toFriendlyError(e));
         } finally {
             setSubmitting(false);
         }
@@ -233,6 +230,16 @@ export default function DiagnosisScreen({ navigation }) {
 
                     {/* Submit */}
                     <View className="px-5 mt-6">
+                        {error && (
+                            <View className="mb-3">
+                                <ErrorBanner
+                                    error={error}
+                                    onRetry={handleSubmit}
+                                    onDismiss={() => setError(null)}
+                                />
+                            </View>
+                        )}
+
                         <TouchableOpacity
                             onPress={handleSubmit}
                             disabled={!canSubmit}
@@ -242,11 +249,25 @@ export default function DiagnosisScreen({ navigation }) {
                             }`}
                         >
                             {submitting ? (
-                                <ActivityIndicator color="#FFFFFF" />
+                                <View className="flex-row items-center">
+                                    <ActivityIndicator color="#FFFFFF" />
+                                    <Text className="text-white text-base font-bold ml-3">Sending photo…</Text>
+                                </View>
                             ) : (
                                 <Text className="text-white text-base font-bold">Check this crop</Text>
                             )}
                         </TouchableOpacity>
+
+                        {/* Say what's still missing rather than leaving a dead grey button */}
+                        {!crop || !image ? (
+                            <Text className="text-xs text-gray-500 text-center mt-2">
+                                {!crop && !image
+                                    ? 'Choose a crop and add a photo to continue'
+                                    : !crop
+                                      ? 'Choose a crop to continue'
+                                      : 'Add a photo to continue'}
+                            </Text>
+                        ) : null}
 
                         <View className="flex-row mt-3 px-1">
                             <Ionicons name="information-circle-outline" size={14} color="#8A9690" />

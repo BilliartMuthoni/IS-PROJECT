@@ -18,6 +18,7 @@ from app.core.security import (
 )
 from app.db.session import get_db
 from app.models.user import User
+from app.core.deps import get_current_user
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -25,6 +26,7 @@ from app.schemas.auth import (
     VerifyOtpRequest,
     TokenResponse,
     OtpSentResponse,
+    CurrentUserResponse,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -139,3 +141,8 @@ def verify_otp_endpoint(request: Request, payload: VerifyOtpRequest, db: Session
     refresh_token = create_refresh_token(subject=str(user.user_id))
 
     return TokenResponse(access_token=access_token, refresh_token=refresh_token, role=user.role)
+
+
+@router.get("/me", response_model=CurrentUserResponse)
+def read_current_user(current_user: User = Depends(get_current_user)):
+    return current_user

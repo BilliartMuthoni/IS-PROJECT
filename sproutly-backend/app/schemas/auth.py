@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
@@ -56,3 +57,14 @@ class TokenResponse(BaseModel):
 class OtpSentResponse(BaseModel):
     message: str
     expires_in_minutes: int
+
+
+class CurrentUserResponse(BaseModel):
+    user_id: int
+    user_phone_number: Optional[str] = None
+    user_email: Optional[EmailStr] = None
+    role: UserRole
+    is_verified: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
