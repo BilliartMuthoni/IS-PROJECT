@@ -15,6 +15,17 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ML (datasets and checkpoints live on Google Drive)
+ml/datasets/
+ml/models/
+ml/logs/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+.ipynb_checkpoints/
+kaggle.json
+
 # System/Editor Junk
 .vscode/
 Thumbs.db

@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     database_url: str
 
+    # Browser origins allowed to call the API (the admin web app). The mobile app
+    # is not a browser client and is unaffected.
+    cors_origins: list[str] = ["http://localhost:5173"]
+
     # Diagnosis
     upload_dir: str = "uploads"
     # Below this calibrated confidence the case is deferred to an extension officer
