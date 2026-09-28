@@ -14,30 +14,45 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import * as AuthService from '../../api/AuthService';
+import { toFriendlyError } from '../../utils/errorMessages';
+import ErrorBanner from '../../components/ErrorBanner';
 
 export default function LoginScreen({ navigation }) {
     const [authMethod, setAuthMethod] = useState('phone');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     const handleLoginSubmit = async () => {
+        setError(null);
+
+        if (authMethod === 'phone' && phoneNumber.trim().length < 9) {
+            setError({ title: 'Check your phone number', message: 'It looks too short. Enter it like 0712345678.', retryable: false });
+            return;
+        }
+        if (authMethod === 'email' && !email.trim()) {
+            setError({ title: 'Email needed', message: 'Enter the email address you signed up with.', retryable: false });
+            return;
+        }
+        if (!password) {
+            setError({ title: 'Password needed', message: 'Enter your password to continue.', retryable: false });
+            return;
+        }
+
         setLoading(true);
         try {
-            if (!password) throw new Error("Please enter your password.");
-
             if (authMethod === 'phone') {
-                if (phoneNumber.length < 9) throw new Error("Please enter a valid phone number.");
                 await AuthService.login({ phoneNumber, password });
                 navigation.navigate('OTP', { phoneNumber, isSignUp: false });
             } else {
-                if (!email) throw new Error("Please enter your email.");
                 await AuthService.login({ email, password });
                 navigation.navigate('OTP', { email, isSignUp: false });
             }
-        } catch (error) {
-            Alert.alert('Login Error', error.message);
+        } catch (e) {
+            setError(toFriendlyError(e));
         } finally {
             setLoading(false);
         }
@@ -102,15 +117,33 @@ export default function LoginScreen({ navigation }) {
 
                         <View className="mb-5">
                             <Text className="text-sm font-semibold text-white mb-2">Password</Text>
-                            <TextInput
-                                className="bg-black/20 border border-glassBorder rounded-xl px-4 py-4 text-base text-white"
-                                placeholder="••••••••"
-                                placeholderTextColor="rgba(255,255,255,0.4)"
-                                secureTextEntry
-                                value={password}
-                                onChangeText={setPassword}
-                            />
+                            <View className="flex-row items-center bg-black/20 border border-glassBorder rounded-xl px-4">
+                                <TextInput
+                                    className="flex-1 py-4 text-base text-white"
+                                    placeholder="••••••••"
+                                    placeholderTextColor="rgba(255,255,255,0.4)"
+                                    secureTextEntry={!showPassword}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                />
+                                <TouchableOpacity
+                                    onPress={() => setShowPassword((v) => !v)}
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Ionicons
+                                        name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                                        size={20}
+                                        color="rgba(255,255,255,0.6)"
+                                    />
+                                </TouchableOpacity>
+                            </View>
                         </View>
+
+                        {error && (
+                            <View className="mb-4">
+                                <ErrorBanner error={error} tone="dark" onDismiss={() => setError(null)} />
+                            </View>
+                        )}
 
                         <TouchableOpacity
                             className={`bg-white py-[18px] rounded-xl items-center mt-2.5 shadow-lg ${loading ? 'opacity-70' : ''}`}

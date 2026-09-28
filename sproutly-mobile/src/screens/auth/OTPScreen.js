@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../../context/AuthContext';
 import * as AuthService from '../../api/AuthService';
+import { toFriendlyError } from '../../utils/errorMessages';
+import ErrorBanner from '../../components/ErrorBanner';
 
 export default function OTPScreen({ route, navigation }) {
     const { phoneNumber, email } = route.params;
@@ -24,6 +26,8 @@ export default function OTPScreen({ route, navigation }) {
     const [resending, setResending] = useState(false);
     const [resendTimer, setResendTimer] = useState(60);
     const [canResend, setCanResend] = useState(false);
+    const [error, setError] = useState(null);
+    const [notice, setNotice] = useState(null);
     const inputRefs = useRef([]);
 
     useEffect(() => {
@@ -69,15 +73,16 @@ export default function OTPScreen({ route, navigation }) {
 
     const handleResend = async () => {
         setResending(true);
+        setError(null);
         try {
             await AuthService.resendOtp({ phoneNumber, email });
             setOtp(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
             setResendTimer(60);
             setCanResend(false);
-            Alert.alert('Code sent', 'A new OTP has been sent.');
-        } catch (error) {
-            Alert.alert('Could not resend', error.message);
+            setNotice('A new code is on its way.');
+        } catch (e) {
+            setError(toFriendlyError(e));
         } finally {
             setResending(false);
         }
@@ -86,18 +91,20 @@ export default function OTPScreen({ route, navigation }) {
     const handleVerifyOTP = async () => {
         const otpString = otp.join('');
         if (otpString.length !== 6) {
-            Alert.alert('Invalid OTP', 'Please enter the complete 6-digit code');
+            setError({ title: 'Code incomplete', message: 'Enter all six digits of the code.', retryable: false });
             return;
         }
 
         setLoading(true);
+        setError(null);
+        setNotice(null);
         try {
             const data = await AuthService.verifyOtp({ phoneNumber, email, otp: otpString });
             // No manual navigation needed -- RootNavigator swaps to the app stack
             // automatically once userToken is set.
             await login(data.access_token, [data.role], data.refresh_token);
-        } catch (error) {
-            Alert.alert('Verification Failed', error.message);
+        } catch (e) {
+            setError(toFriendlyError(e));
             setOtp(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
         } finally {
@@ -145,6 +152,19 @@ export default function OTPScreen({ route, navigation }) {
                             />
                         ))}
                     </View>
+
+                    {error && (
+                        <View className="w-full mb-4">
+                            <ErrorBanner error={error} tone="dark" onDismiss={() => setError(null)} />
+                        </View>
+                    )}
+
+                    {notice && !error && (
+                        <View className="w-full mb-4 flex-row items-center bg-white/10 border border-white/20 rounded-2xl p-3">
+                            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+                            <Text className="text-sm text-white/90 ml-2">{notice}</Text>
+                        </View>
+                    )}
 
                     <TouchableOpacity
                         className={`bg-white py-[18px] rounded-2xl items-center w-full mt-2.5 shadow-lg ${(loading || otp.join('').length !== 6) ? 'opacity-50' : ''}`}
