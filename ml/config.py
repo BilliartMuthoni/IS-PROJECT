@@ -104,6 +104,10 @@ IMAGE_SIZE = (224, 224)
 MIN_IMAGE_SIZE = (64, 64)
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tif", ".tiff"}
 
+# Two images whose 64-bit perceptual hashes differ in at most this many bits are
+# treated as near-duplicates (the same photo resized, recompressed or lightly edited).
+NEAR_DUPLICATE_MAX_DISTANCE = 4
+
 TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
