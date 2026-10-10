@@ -29,9 +29,11 @@ def push(repo: Path, branch: str, message: str, token: str, name: str, email: st
         return "Nothing to commit."
 
     _git(repo, "switch", "-c", branch)
+    committed = False
     try:
         _git(repo, "add", "-A")
         _git(repo, "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message)
+        committed = True
 
         origin = _git(repo, "remote", "get-url", "origin")
         authed = origin.replace("https://", f"https://x-access-token:{token}@", 1)
@@ -41,7 +43,13 @@ def push(repo: Path, branch: str, message: str, token: str, name: str, email: st
             raise RuntimeError(str(err).replace(token, "***")) from None
         commit = _git(repo, "log", "-1", "--oneline")
     finally:
-        _git(repo, "switch", "main")
+        if committed:
+            # Colab autosaves the running notebook after the commit; that copy only
+            # differs in this cell's output, so it is safe to drop.
+            _git(repo, "switch", "--discard-changes", "main")
+        else:
+            # Nothing was committed, so carry the changes back to main rather than lose them.
+            _git(repo, "switch", "main")
 
     slug = re.sub(r"^https://github\.com/|\.git$", "", origin)
     return (
