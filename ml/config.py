@@ -63,6 +63,29 @@ FIELDPLANT_CLASS_MAP = {
     "Tomato healthy": "Tomato___healthy",  # Tomato_healthy
 }
 
+# PlantDoc (cropped classification release) labels mapped to project classes.
+# PlantDoc has no healthy maize or healthy potato folder.
+PLANTDOC_CLASS_MAP = {
+    "Corn Gray leaf spot": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",
+    "Corn rust leaf": "Corn_(maize)___Common_rust_",
+    "Corn leaf blight": "Corn_(maize)___Northern_Leaf_Blight",
+    "Tomato leaf bacterial spot": "Tomato___Bacterial_spot",
+    "Tomato Early blight leaf": "Tomato___Early_blight",
+    "Tomato leaf late blight": "Tomato___Late_blight",
+    "Tomato leaf": "Tomato___healthy",
+    "Potato leaf early blight": "Potato___Early_blight",
+    "Potato leaf late blight": "Potato___Late_blight",
+}
+
+# Tomato diseases outside the 11 classes: the unseen-class set for testing deferral.
+PLANTDOC_UNSEEN_LABELS = [
+    "Tomato Septoria leaf spot",
+    "Tomato leaf mosaic virus",
+    "Tomato leaf yellow virus",
+    "Tomato mold leaf",
+    "Tomato two spotted spider mites leaf",
+]
+
 
 # ============================================================
 # PROCESSING
