@@ -1,9 +1,12 @@
 """Commit and push the repository clone on Drive from a Colab session.
 
-The token is passed only on the push command line and never written to the
-Git config, so it does not persist on Drive.
+main is protected, so changes are committed to a new branch and pushed there,
+and the returned link opens a pull request. The Drive copy is then switched
+back to main so the next session's pull keeps working. The token is passed
+only on the push command line and never written to the Git config.
 """
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -21,19 +24,27 @@ def status(repo: Path) -> str:
     return _git(repo, "status", "--short", "--branch")
 
 
-def push(repo: Path, message: str, token: str, name: str, email: str) -> str:
-    _git(repo, "add", "-A")
+def push(repo: Path, branch: str, message: str, token: str, name: str, email: str) -> str:
     if not _git(repo, "status", "--porcelain"):
         return "Nothing to commit."
 
-    _git(repo, "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message)
-
-    origin = _git(repo, "remote", "get-url", "origin")
-    authed = origin.replace("https://", f"https://x-access-token:{token}@", 1)
-    branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD")
+    _git(repo, "switch", "-c", branch)
     try:
-        _git(repo, "push", authed, f"HEAD:{branch}")
-    except RuntimeError as err:
-        raise RuntimeError(str(err).replace(token, "***")) from None
+        _git(repo, "add", "-A")
+        _git(repo, "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message)
 
-    return f"Pushed to {branch}: {_git(repo, 'log', '-1', '--oneline')}"
+        origin = _git(repo, "remote", "get-url", "origin")
+        authed = origin.replace("https://", f"https://x-access-token:{token}@", 1)
+        try:
+            _git(repo, "push", authed, f"{branch}:{branch}")
+        except RuntimeError as err:
+            raise RuntimeError(str(err).replace(token, "***")) from None
+        commit = _git(repo, "log", "-1", "--oneline")
+    finally:
+        _git(repo, "switch", "main")
+
+    slug = re.sub(r"^https://github\.com/|\.git$", "", origin)
+    return (
+        f"Pushed {commit} to branch {branch}.\n"
+        f"Open the pull request: https://github.com/{slug}/compare/main...{branch}?expand=1"
+    )
