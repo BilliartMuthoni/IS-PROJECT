@@ -53,6 +53,17 @@ PLANTVILLAGE_CLASSES = [
     "Potato___healthy",
 ]
 
+# FieldPlant (official Roboflow release, version 11) labels mapped to project
+# classes. Only unambiguous matches; every other label is dropped and recorded.
+# Original FieldPlant labels in brackets.
+FIELDPLANT_CLASS_MAP = {
+    "Corn Gray leaf spot": "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot",  # Corn_Cercosporiose
+    "Corn Healthy": "Corn_(maize)___healthy",  # Corn_Healthy
+    "Tomato blight leaf": "Tomato___Late_blight",  # Tomato_Mildiou (French for late blight)
+    "Tomato healthy": "Tomato___healthy",  # Tomato_healthy
+}
+
+
 # ============================================================
 # PROCESSING
 # ============================================================
