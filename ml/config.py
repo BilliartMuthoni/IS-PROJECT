@@ -27,6 +27,7 @@ METADATA_DIR = DATASETS_DIR / "metadata"
 PLANTVILLAGE_DIR = RAW_DATA_DIR / "plantvillage"
 FIELDPLANT_DIR = RAW_DATA_DIR / "fieldplant"
 PLANTDOC_DIR = RAW_DATA_DIR / "plantdoc"
+TANZANIA_DIR = RAW_DATA_DIR / "tanzania_potato"
 
 MODELS_DIR = DATA_ROOT / "models"
 REPORTS_DIR = DATA_ROOT / "reports"
@@ -86,6 +87,14 @@ PLANTDOC_UNSEEN_LABELS = [
     "Tomato two spotted spider mites leaf",
 ]
 
+# Tanzania Irish potato field images (Zenodo record 8286529): zip name -> class.
+TANZANIA_CLASS_MAP = {
+    "earlyblt": "Potato___Early_blight",
+    "lateblt": "Potato___Late_blight",
+    "healthy": "Potato___healthy",
+}
+TANZANIA_SAMPLE_PER_CLASS = 1000
+
 
 # ============================================================
 # PROCESSING
@@ -110,6 +119,7 @@ def ensure_dirs() -> None:
         PLANTVILLAGE_DIR,
         FIELDPLANT_DIR,
         PLANTDOC_DIR,
+        TANZANIA_DIR,
         PROCESSED_DIR,
         SPLITS_DIR,
         METADATA_DIR,
