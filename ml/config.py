@@ -47,6 +47,7 @@ PLANTVILLAGE_CLASSES = [
     "Tomato___Bacterial_spot",
     "Tomato___Early_blight",
     "Tomato___Late_blight",
+    "Tomato___healthy",
     "Potato___Early_blight",
     "Potato___Late_blight",
     "Potato___healthy",

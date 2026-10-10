@@ -1,14 +1,14 @@
-# Versions pinned to the verified Colab environment (Python 3.12, CUDA 12.8, Tesla T4).
-# Unpinned packages: run `pip freeze` in Colab and pin them once confirmed.
-torch==2.11.0
+# Colab preinstalls these; unpinned so pip keeps Colab's versions.
+# Exact versions used in each session are saved by notebook 01 to reports/ on Drive.
+torch
 torchvision
-numpy==2.0.2
-pandas==2.2.2
-pillow==11.3.0
+numpy
+pandas
+pillow
 opencv-python-headless
-scikit-learn==1.6.1
-transformers==5.13.1
-timm==1.0.28
+scikit-learn
+transformers
+timm
 datasets
 accelerate
 evaluate
@@ -18,3 +18,4 @@ seaborn
 tqdm
 pyyaml
 requests
+roboflow
