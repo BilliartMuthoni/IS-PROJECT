@@ -8,7 +8,7 @@ model; nothing here is imported by the app at runtime.
 
 | What | Where | In Git |
 |---|---|---|
-| Code, notebooks, config | this repository, cloned into Drive at `MyDrive/crop-disease-detection` | yes |
+| Code, notebooks, config | this repository, cloned into Drive at `MyDrive/Sproutly-app` | yes |
 | Datasets, checkpoints, reports, logs | Drive at `MyDrive/CropDiseaseDiagnosis` | no — too large |
 
 All computation runs in Colab; nothing needs to run locally.
@@ -41,7 +41,7 @@ ml/
 
 **Every session after that**
 
-1. Open notebooks from Drive: `MyDrive/crop-disease-detection/ml/notebooks/`.
+1. Open notebooks from Drive: `MyDrive/Sproutly-app/ml/notebooks/`.
 2. Runtime → Change runtime type → **T4 GPU**. Run top to bottom.
 3. When a piece of work is done: save the notebook (Ctrl+S), set the commit message
    in the last cell, and run it to push.
