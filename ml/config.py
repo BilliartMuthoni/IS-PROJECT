@@ -112,6 +112,12 @@ TRAIN_RATIO = 0.70
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
 
+# The training pool is cut into this many equal, class-balanced folds; the ratios
+# above decide how many go to train, validation and test (14 / 3 / 3).
+SPLIT_FOLDS = 20
+# How far a class's or source's share of a partition may drift from its target ratio.
+SPLIT_TOLERANCE = 0.03
+
 RANDOM_SEED = 42
 
 # PlantDoc is reserved for out-of-domain evaluation.
