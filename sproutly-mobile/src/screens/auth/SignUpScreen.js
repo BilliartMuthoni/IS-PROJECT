@@ -35,7 +35,7 @@ export default function SignUpScreen({ navigation }) {
             return;
         }
         if (authMethod === 'email' && !email.trim()) {
-            setError({ title: 'Email needed', message: 'Enter an email address we can send your code to.', retryable: false });
+            setError({ title: 'Email needed', message: 'Enter the email address you want to log in with.', retryable: false });
             return;
         }
         if (password.length < 8) {
@@ -49,13 +49,13 @@ export default function SignUpScreen({ navigation }) {
 
         setLoading(true);
         try {
-            if (authMethod === 'phone') {
-                await AuthService.register({ phoneNumber, password });
-                navigation.navigate('OTP', { phoneNumber, isSignUp: true });
-            } else {
-                await AuthService.register({ email, password });
-                navigation.navigate('OTP', { email, isSignUp: true });
-            }
+            const data = await AuthService.register(authMethod === 'phone' ? { phoneNumber, password } : { email, password });
+            // The account can't log in until the authenticator app is set up.
+            navigation.navigate('MfaSetup', {
+                mfaToken: data.mfa_token,
+                expiresInMinutes: data.expires_in_minutes,
+                setup: data.setup,
+            });
         } catch (e) {
             setError(toFriendlyError(e));
         } finally {
@@ -187,17 +187,6 @@ export default function SignUpScreen({ navigation }) {
                                 )}
                             </TouchableOpacity>
                         </View>
-
-                        <View className="flex-row items-center my-5">
-                            <View className="flex-1 h-px bg-white/20" />
-                            <Text className="mx-4 text-white/40 text-sm">OR</Text>
-                            <View className="flex-1 h-px bg-white/20" />
-                        </View>
-
-                        <TouchableOpacity className="border border-white/20 py-[15px] rounded-2xl items-center flex-row justify-center">
-                            <Ionicons name="logo-google" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                            <Text className="text-white text-base font-semibold">Continue with Google</Text>
-                        </TouchableOpacity>
 
                         <View className="flex-row justify-center mt-6">
                             <Text className="text-white/70 text-sm">Already have an account? </Text>

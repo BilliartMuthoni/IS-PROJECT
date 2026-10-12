@@ -44,13 +44,13 @@ export default function LoginScreen({ navigation }) {
 
         setLoading(true);
         try {
-            if (authMethod === 'phone') {
-                await AuthService.login({ phoneNumber, password });
-                navigation.navigate('OTP', { phoneNumber, isSignUp: false });
-            } else {
-                await AuthService.login({ email, password });
-                navigation.navigate('OTP', { email, isSignUp: false });
-            }
+            const data = await AuthService.login(authMethod === 'phone' ? { phoneNumber, password } : { email, password });
+            // Accounts without MFA yet are sent to setup; the rest just enter their code.
+            navigation.navigate(data.next_step === 'setup' ? 'MfaSetup' : 'MfaCode', {
+                mfaToken: data.mfa_token,
+                expiresInMinutes: data.expires_in_minutes,
+                setup: data.setup,
+            });
         } catch (e) {
             setError(toFriendlyError(e));
         } finally {
@@ -153,19 +153,8 @@ export default function LoginScreen({ navigation }) {
                             {loading ? (
                                 <ActivityIndicator color="#1B4332" />
                             ) : (
-                                <Text className="text-primary text-lg font-bold">Send OTP</Text>
+                                <Text className="text-primary text-lg font-bold">Continue</Text>
                             )}
-                        </TouchableOpacity>
-
-                        <View className="flex-row items-center my-6 justify-center">
-                            <View className="flex-1 h-px bg-glassBorder" />
-                            <Text className="mx-4 text-white/40 text-sm">OR</Text>
-                            <View className="flex-1 h-px bg-glassBorder" />
-                        </View>
-
-                        <TouchableOpacity className="border border-glassBorder py-4 rounded-xl items-center flex-row justify-center">
-                            <Ionicons name="logo-google" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-                            <Text className="text-white text-base font-semibold">Continue with Google</Text>
                         </TouchableOpacity>
 
                         <View className="flex-row justify-center mt-8 pb-5">

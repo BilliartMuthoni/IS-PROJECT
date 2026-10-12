@@ -54,7 +54,7 @@ export default function ProfileScreen({ navigation }) {
     }, [load]);
 
     const confirmLogout = () => {
-        Alert.alert('Log out?', 'You will need your password and a new code to get back in.', [
+        Alert.alert('Log out?', 'You will need your password and a code from your authenticator app to get back in.', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Log out', style: 'destructive', onPress: logout },
         ]);
