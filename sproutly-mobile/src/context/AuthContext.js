@@ -1,6 +1,8 @@
 // Contains information needed by the whole app eg usertoken
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onSessionExpired } from '../api/session';
 
 export const AuthContext = createContext();
 
@@ -53,6 +55,19 @@ export const AuthProvider = ({ children }) => {
             console.error("Failed to remove auth data", e);
         }
     };
+
+    // When the backend rejects the stored token (expired session), log out once and say why.
+    // RootNavigator then shows the login screens because userToken becomes null.
+    const tokenRef = useRef(null);
+    tokenRef.current = userToken;
+    useEffect(() => {
+        onSessionExpired(() => {
+            if (!tokenRef.current) return; // several requests can fail at once; act only on the first
+            tokenRef.current = null;
+            logout();
+            Alert.alert('Please log in again', 'Your session has ended for security. Log in to continue.');
+        });
+    }, []);
 
     return (
         <AuthContext.Provider value={{ login, logout, userToken, userRoles, isLoading }}>

@@ -1,11 +1,13 @@
 // Talks to the FastAPI backend's /auth endpoints.
 import axios from 'axios';
 import { API_BASE_URL } from '../constants/api';
+import { watchForExpiredSession } from './session';
 
 const client = axios.create({
     baseURL: API_BASE_URL,
     timeout: 10000,
 });
+watchForExpiredSession(client);
 
 function extractErrorMessage(error) {
     const detail = error?.response?.data?.detail;

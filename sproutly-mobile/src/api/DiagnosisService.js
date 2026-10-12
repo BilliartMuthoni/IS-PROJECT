@@ -1,11 +1,13 @@
 // Talks to the FastAPI backend's /diagnose endpoints.
 import axios from 'axios';
 import { API_BASE_URL } from '../constants/api';
+import { watchForExpiredSession } from './session';
 
 const client = axios.create({
     baseURL: API_BASE_URL,
     timeout: 30000, // uploads over rural connections need room
 });
+watchForExpiredSession(client);
 
 function extractErrorMessage(error) {
     const detail = error?.response?.data?.detail;
