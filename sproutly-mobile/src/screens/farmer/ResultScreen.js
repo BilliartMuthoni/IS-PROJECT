@@ -1,30 +1,27 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { View, Text, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import ScreenHeader from '../../components/ScreenHeader';
+import { PrimaryButton, SecondaryButton, TextButton } from '../../components/Buttons';
+import { COLORS, CROP_LABELS } from '../../constants/theme';
 
-const COLORS = {
-    brand: '#1B4332',
-    brandLight: '#2D5A43',
-    attention: '#B4622A',
-    expert: '#3A6EA5',
-};
-
-const CROP_LABELS = { maize: 'Maize', tomato: 'Tomato', potato: 'Potato' };
-
-function Section({ title, icon, items, color }) {
+/** A titled, numbered list separated from what comes before by a thin rule. */
+function Steps({ title, items }) {
     if (!items?.length) return null;
     return (
-        <View className="bg-white rounded-2xl border border-gray-200 p-5 mt-4">
-            <View className="flex-row items-center mb-3">
-                <MaterialCommunityIcons name={icon} size={18} color={color} />
-                <Text className="text-sm font-bold text-gray-800 ml-2">{title}</Text>
-            </View>
+        <View className="mt-6 pt-5" style={{ borderTopWidth: 1, borderTopColor: COLORS.divider }}>
+            <Text className="text-base font-bold mb-3" style={{ color: COLORS.ink }}>
+                {title}
+            </Text>
             {items.map((step, index) => (
-                <View key={index} className="flex-row mb-2">
-                    <Text className="text-sm text-gray-400 mr-2">{index + 1}.</Text>
-                    <Text className="text-sm text-gray-700 flex-1 leading-5">{step}</Text>
+                <View key={index} className="flex-row mb-3">
+                    <Text className="text-base font-bold w-6" style={{ color: COLORS.faint }}>
+                        {index + 1}
+                    </Text>
+                    <Text className="text-base flex-1 leading-6" style={{ color: COLORS.text }}>
+                        {step}
+                    </Text>
                 </View>
             ))}
         </View>
@@ -33,150 +30,95 @@ function Section({ title, icon, items, color }) {
 
 export default function ResultScreen({ route, navigation }) {
     const { result, imageUri } = route.params;
-    const isReferred = result.is_referred;
+    const referred = result.is_referred;
     const cropLabel = CROP_LABELS[result.crop] || result.crop;
+    const crop = cropLabel.toLowerCase();
+    const healthy = !referred && result.predicted_disease?.startsWith('Healthy');
 
-    const handleSupportContacts = () => {
-        // TODO: replace with the county support-contacts directory (Sprint 4).
-        Alert.alert(
-            'Support contacts',
-            'A list of support contacts for your county is coming soon. For now, contact your county agriculture office or a local agrovet.'
-        );
-    };
+    const accent = referred ? COLORS.referral : healthy ? COLORS.healthy : COLORS.disease;
+    const status = referred ? 'Not diagnosed' : healthy ? 'No disease found' : 'Diagnosis';
+    const title = referred ? "We couldn't diagnose this reliably" : result.predicted_disease;
+
+    const home = () => navigation.popToTop();
+    const openSupport = () => navigation.navigate('SupportContacts');
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F7F4' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar style="dark" />
+            <ScreenHeader title="Result" icon="close" onBack={home} />
             <ScrollView contentContainerClassName="pb-10">
-                {/* Header */}
-                <View className="flex-row items-center px-5 pt-4 pb-2">
-                    <TouchableOpacity
-                        onPress={() => navigation.popToTop()}
-                        className="w-10 h-10 rounded-full bg-white border border-gray-200 items-center justify-center mr-3"
-                    >
-                        <Ionicons name="close" size={20} color={COLORS.brand} />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-bold text-forestDeep">Result</Text>
-                </View>
+                {imageUri && <Image source={{ uri: imageUri }} className="w-full h-56" resizeMode="cover" />}
 
-                {/* The photo that was checked */}
-                {imageUri && (
-                    <View className="mx-5 mt-2 rounded-2xl overflow-hidden border border-gray-200">
-                        <Image source={{ uri: imageUri }} className="w-full h-44" resizeMode="cover" />
-                    </View>
-                )}
+                <View className="px-5 pt-5">
+                    <Text className="text-xs font-bold tracking-wider" style={{ color: accent }}>
+                        {cropLabel.toUpperCase()} · {status.toUpperCase()}
+                    </Text>
+                    <Text className="text-2xl font-bold mt-1" style={{ color: COLORS.ink }}>
+                        {title}
+                    </Text>
 
-                {isReferred ? (
-                    <>
-                        {/* Referral outcome */}
-                        <View
-                            className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 p-5"
-                            style={{ borderLeftWidth: 3, borderLeftColor: COLORS.expert }}
-                        >
-                            <View className="flex-row items-center mb-3">
-                                <View
-                                    className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                                    style={{ backgroundColor: `${COLORS.expert}1A` }}
-                                >
-                                    <MaterialCommunityIcons name="help-circle-outline" size={20} color={COLORS.expert} />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className="text-base font-bold text-gray-800">
-                                        We couldn't diagnose this reliably
-                                    </Text>
-                                    <Text className="text-xs text-gray-500 mt-0.5">{cropLabel}</Text>
-                                </View>
-                            </View>
-                            <Text className="text-sm text-gray-700 leading-5">{result.referral_message}</Text>
+                    {referred ? (
+                        <>
+                            <Text className="text-base mt-3 leading-6" style={{ color: COLORS.text }}>
+                                {result.referral_message}
+                            </Text>
                             {result.crop_mismatch && (
-                                <Text className="text-sm text-gray-700 leading-5 mt-3">
-                                    We could not diagnose this as{' '}
-                                    <Text className="font-bold">{cropLabel.toLowerCase()}</Text>. If this is not a{' '}
-                                    {cropLabel.toLowerCase()} leaf, choose the correct crop and try again. If it is{' '}
-                                    {cropLabel.toLowerCase()}, use the support contacts below.
+                                <Text className="text-base mt-3 leading-6" style={{ color: COLORS.text }}>
+                                    We could not diagnose this as <Text className="font-bold">{crop}</Text>. If this is
+                                    not a {crop} leaf, choose the correct crop and try again. If it is {crop}, use the
+                                    support contacts below.
                                 </Text>
                             )}
-                        </View>
-
-                        <View className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 p-5">
-                            <Text className="text-sm font-bold text-gray-800 mb-2">Before you treat</Text>
-                            <Text className="text-sm text-gray-600 leading-5">
-                                Avoid spraying anything until you have an answer. Treating the wrong problem costs
-                                money and can make the crop worse.
-                            </Text>
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={handleSupportContacts}
-                            activeOpacity={0.85}
-                            className="mx-5 mt-4 rounded-2xl py-4 items-center flex-row justify-center"
-                            style={{ backgroundColor: COLORS.expert }}
-                        >
-                            <MaterialCommunityIcons name="phone-outline" size={18} color="#FFFFFF" />
-                            <Text className="text-white text-base font-bold ml-2">Get support contacts</Text>
-                        </TouchableOpacity>
-                    </>
-                ) : (
-                    <>
-                        {/* Confident diagnosis */}
-                        <View
-                            className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 p-5"
-                            style={{ borderLeftWidth: 3, borderLeftColor: COLORS.attention }}
-                        >
-                            <Text className="text-xs font-semibold text-gray-500 mb-1">
-                                {cropLabel.toUpperCase()}
-                            </Text>
-                            <Text className="text-xl font-bold text-gray-800">{result.predicted_disease}</Text>
+                            <View className="mt-6 pt-5" style={{ borderTopWidth: 1, borderTopColor: COLORS.divider }}>
+                                <Text className="text-base font-bold mb-2" style={{ color: COLORS.ink }}>
+                                    Before you treat
+                                </Text>
+                                <Text className="text-base leading-6" style={{ color: COLORS.text }}>
+                                    Avoid spraying anything until you have an answer. Treating the wrong problem costs
+                                    money and can make the crop worse.
+                                </Text>
+                            </View>
+                        </>
+                    ) : (
+                        <>
                             {result.guidance?.summary && (
-                                <Text className="text-sm text-gray-600 mt-2 leading-5">
+                                <Text className="text-base mt-3 leading-6" style={{ color: COLORS.text }}>
                                     {result.guidance.summary}
                                 </Text>
                             )}
-                        </View>
+                            <Steps title="What to do now" items={result.guidance?.treatment} />
+                            <Steps title="Stopping it coming back" items={result.guidance?.prevention} />
+                        </>
+                    )}
+                </View>
 
-                        <View className="mx-5">
-                            <Section
-                                title="What to do now"
-                                icon="spray-bottle"
-                                items={result.guidance?.treatment}
-                                color={COLORS.attention}
+                <View className="px-5 mt-8">
+                    {referred ? (
+                        <>
+                            <PrimaryButton
+                                label="Support contacts"
+                                icon="call-outline"
+                                color={COLORS.referral}
+                                onPress={openSupport}
                             />
-                            <Section
-                                title="Stopping it coming back"
-                                icon="shield-check-outline"
-                                items={result.guidance?.prevention}
-                                color={COLORS.brandLight}
-                            />
-                        </View>
-
-                        <View className="mx-5 mt-4 flex-row px-1">
-                            <Ionicons name="information-circle-outline" size={14} color="#8A9690" />
-                            <Text className="text-xs text-gray-500 ml-1 flex-1 leading-4">
-                                Not matching what you see? Contact your county agriculture office or a local agrovet
-                                rather than treating the wrong problem.
+                            {result.crop_mismatch && (
+                                // The diagnose screen still holds the photo, so going back is all a retry needs.
+                                <SecondaryButton label="Choose a different crop" onPress={() => navigation.goBack()} />
+                            )}
+                            <TextButton label="Back to home" onPress={home} />
+                        </>
+                    ) : (
+                        <>
+                            <PrimaryButton label="Done" onPress={home} />
+                            <Text className="text-sm text-center mt-4 leading-5" style={{ color: COLORS.muted }}>
+                                Not matching what you see?{' '}
+                                <Text className="font-bold" style={{ color: COLORS.brand }} onPress={openSupport}>
+                                    Support contacts
+                                </Text>
                             </Text>
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={handleSupportContacts}
-                            activeOpacity={0.85}
-                            className="mx-5 mt-3 bg-white rounded-2xl border border-gray-200 py-4 items-center flex-row justify-center"
-                        >
-                            <MaterialCommunityIcons name="phone-outline" size={18} color={COLORS.brand} />
-                            <Text className="text-forestDeep text-sm font-semibold ml-2">
-                                Get support contacts
-                            </Text>
-                        </TouchableOpacity>
-                    </>
-                )}
-
-                <TouchableOpacity
-                    onPress={() => navigation.popToTop()}
-                    activeOpacity={0.85}
-                    className="mx-5 mt-3 py-4 items-center"
-                >
-                    <Text className="text-sm font-semibold text-gray-500">Back to home</Text>
-                </TouchableOpacity>
+                        </>
+                    )}
+                </View>
             </ScrollView>
         </SafeAreaView>
     );

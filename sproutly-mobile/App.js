@@ -20,6 +20,7 @@ import FarmerDashboard from './src/screens/farmer/FarmerDashboard';
 import DiagnosisScreen from './src/screens/farmer/DiagnosisScreen';
 import ResultScreen from './src/screens/farmer/ResultScreen';
 import ProfileScreen from './src/screens/farmer/ProfileScreen';
+import SupportContactsScreen from './src/screens/farmer/SupportContactsScreen';
 
 const Stack = createStackNavigator();
 
@@ -47,6 +48,7 @@ const RootNavigator = () => {
                         <Stack.Screen name="Diagnosis" component={DiagnosisScreen} />
                         <Stack.Screen name="Result" component={ResultScreen} />
                         <Stack.Screen name="Profile" component={ProfileScreen} />
+                        <Stack.Screen name="SupportContacts" component={SupportContactsScreen} />
                     </>
                 )}
             </Stack.Navigator>
