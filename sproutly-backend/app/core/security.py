@@ -1,13 +1,24 @@
-import secrets
+import base64
+import hmac
+import io
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import pyotp
+import qrcode
+from cryptography.fernet import Fernet
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_fernet = Fernet(settings.totp_encryption_key)
+
+# Accept the code for the current 30-second step and one step either side, to
+# allow for a phone clock that is slightly off. Wider windows make guessing easier.
+TOTP_VALID_WINDOW = 1
 
 
 # --- Passwords ---
@@ -45,6 +56,15 @@ def create_refresh_token(subject: str) -> str:
     )
 
 
+def create_mfa_token(subject: str, token_type: str, minutes: int) -> str:
+    """Short-lived token that links the password step to the code step.
+
+    token_type is "mfa_login" or "mfa_setup". get_current_user only accepts
+    "access", so neither can be used to call the API.
+    """
+    return _create_token({"sub": subject}, timedelta(minutes=minutes), token_type)
+
+
 def decode_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
@@ -52,15 +72,43 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
-# --- OTP ---
+# --- Authenticator app (TOTP) ---
 
-def generate_otp() -> str:
-    return "".join(secrets.choice("0123456789") for _ in range(settings.otp_length))
-
-
-def hash_otp(otp: str) -> str:
-    return pwd_context.hash(otp)
+def new_totp_secret() -> str:
+    return pyotp.random_base32()
 
 
-def verify_otp(plain_otp: str, hashed_otp: str) -> bool:
-    return pwd_context.verify(plain_otp, hashed_otp)
+def encrypt_secret(secret: str) -> str:
+    return _fernet.encrypt(secret.encode()).decode()
+
+
+def decrypt_secret(encrypted: str) -> str:
+    return _fernet.decrypt(encrypted.encode()).decode()
+
+
+def provisioning_uri(secret: str, account_name: str) -> str:
+    """otpauth:// link that Google Authenticator and Microsoft Authenticator both read."""
+    return pyotp.TOTP(secret).provisioning_uri(name=account_name, issuer_name=settings.totp_issuer)
+
+
+def qr_code_data_uri(uri: str) -> str:
+    """PNG QR code of the otpauth link, as a data URI an <Image> can show directly."""
+    buffer = io.BytesIO()
+    qrcode.make(uri).save(buffer, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
+
+
+def verify_totp(secret: str, code: str, last_used_step: Optional[int]) -> Optional[int]:
+    """Return the time step the code belongs to, or None if it is wrong or already used.
+
+    The caller stores the returned step; any code from that step or earlier is then
+    rejected, so a code seen over someone's shoulder can't be replayed.
+    """
+    totp = pyotp.TOTP(secret)
+    current_step = int(time.time()) // totp.interval
+    for step in range(current_step - TOTP_VALID_WINDOW, current_step + TOTP_VALID_WINDOW + 1):
+        if last_used_step is not None and step <= last_used_step:
+            continue
+        if hmac.compare_digest(totp.generate_otp(step), code):
+            return step
+    return None

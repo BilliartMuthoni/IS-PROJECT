@@ -1,20 +1,23 @@
-from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.email import send_otp_email
 from app.core.limiter import limiter
 from app.core.security import (
     hash_password,
     verify_password,
-    generate_otp,
-    hash_otp,
-    verify_otp,
     create_access_token,
     create_refresh_token,
+    create_mfa_token,
+    decode_token,
+    new_totp_secret,
+    encrypt_secret,
+    decrypt_secret,
+    provisioning_uri,
+    qr_code_data_uri,
+    verify_totp,
 )
 from app.db.session import get_db
 from app.models.user import User
@@ -22,10 +25,10 @@ from app.core.deps import get_current_user
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
-    ResendOtpRequest,
-    VerifyOtpRequest,
+    MfaCodeRequest,
+    MfaChallengeResponse,
+    MfaSetup,
     TokenResponse,
-    OtpSentResponse,
     CurrentUserResponse,
 )
 
@@ -39,25 +42,62 @@ def _get_user_by_identifier(db: Session, phone_number: Optional[str], email: Opt
     return query.filter(User.user_email == email).first()
 
 
-def _issue_and_store_otp(db: Session, user: User, background_tasks: BackgroundTasks) -> None:
-    otp = generate_otp()
-    user.hashed_otp = hash_otp(otp)
-    user.otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=settings.otp_expire_minutes)
+def _start_setup(db: Session, user: User) -> MfaChallengeResponse:
+    """Give the user a new authenticator secret to add to their app.
+
+    Only reached while MFA is still off, so replacing an unconfirmed secret
+    can't lock anyone out.
+    """
+    secret = new_totp_secret()
+    user.totp_secret_encrypted = encrypt_secret(secret)
+    user.totp_last_used_step = None
     db.commit()
 
-    if user.user_email:
-        # Sent in the background so the caller isn't left waiting on SMTP.
-        background_tasks.add_task(send_otp_email, user.user_email, otp)
+    uri = provisioning_uri(secret, user.user_phone_number or user.user_email)
+    minutes = settings.mfa_setup_token_expire_minutes
+    return MfaChallengeResponse(
+        next_step="setup",
+        mfa_token=create_mfa_token(str(user.user_id), "mfa_setup", minutes),
+        expires_in_minutes=minutes,
+        setup=MfaSetup(secret=secret, otpauth_uri=uri, qr_code=qr_code_data_uri(uri)),
+    )
 
-    # SMS delivery is still mocked -- replace with a real gateway
-    # (e.g. Africa's Talking) before production use.
-    identifier = user.user_phone_number or user.user_email
-    print(f"[MOCK OTP] sending to {identifier}: {otp}")
+
+def _user_from_mfa_token(db: Session, token: str, expected_type: str) -> User:
+    payload = decode_token(token)
+    if not payload or payload.get("type") != expected_type or not payload.get("sub"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This step has expired. Please log in again.",
+        )
+    user = db.query(User).filter(User.user_id == int(payload["sub"])).first()
+    if not user or not user.is_active or not user.totp_secret_encrypted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This step has expired. Please log in again.",
+        )
+    return user
 
 
-@router.post("/register", response_model=OtpSentResponse, status_code=status.HTTP_201_CREATED)
+def _check_code(db: Session, user: User, code: str) -> None:
+    step = verify_totp(decrypt_secret(user.totp_secret_encrypted), code, user.totp_last_used_step)
+    if step is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong or expired code")
+    user.totp_last_used_step = step
+    db.commit()
+
+
+def _issue_tokens(user: User) -> TokenResponse:
+    return TokenResponse(
+        access_token=create_access_token(subject=str(user.user_id), role=user.role.value),
+        refresh_token=create_refresh_token(subject=str(user.user_id)),
+        role=user.role,
+    )
+
+
+@router.post("/register", response_model=MfaChallengeResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-def register(request: Request, payload: RegisterRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def register(request: Request, payload: RegisterRequest, db: Session = Depends(get_db)):
     existing = _get_user_by_identifier(db, payload.phone_number, payload.email)
     if existing:
         raise HTTPException(
@@ -74,73 +114,63 @@ def register(request: Request, payload: RegisterRequest, background_tasks: Backg
     db.commit()
     db.refresh(user)
 
-    _issue_and_store_otp(db, user, background_tasks)
-    return OtpSentResponse(
-        message="Account created. An OTP has been sent for verification.",
-        expires_in_minutes=settings.otp_expire_minutes,
-    )
+    # The account can't log in until the first authenticator code is confirmed.
+    return _start_setup(db, user)
 
 
-@router.post("/login", response_model=OtpSentResponse)
+@router.post("/login", response_model=MfaChallengeResponse)
 @limiter.limit("5/minute")
-def login(request: Request, payload: LoginRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     user = _get_user_by_identifier(db, payload.phone_number, payload.email)
     if not user or not user.hashed_password or not verify_password(payload.password, user.hashed_password):
         # Same error for "no such user" and "wrong password" -- never reveal which one.
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    _issue_and_store_otp(db, user, background_tasks)
-    return OtpSentResponse(
-        message="OTP sent for verification.",
-        expires_in_minutes=settings.otp_expire_minutes,
+    # Accounts from before MFA, or whose setup was never finished, set it up now.
+    if not user.mfa_enabled:
+        return _start_setup(db, user)
+
+    minutes = settings.mfa_token_expire_minutes
+    return MfaChallengeResponse(
+        next_step="verify",
+        mfa_token=create_mfa_token(str(user.user_id), "mfa_login", minutes),
+        expires_in_minutes=minutes,
     )
 
 
-@router.post("/resend-otp", response_model=OtpSentResponse)
+@router.post("/mfa/setup/confirm", response_model=TokenResponse)
 @limiter.limit("5/minute")
-def resend_otp(request: Request, payload: ResendOtpRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    user = _get_user_by_identifier(db, payload.phone_number, payload.email)
-    # Only allow a resend if there's an actual pending (unverified) OTP --
-    # otherwise this endpoint would let anyone spam OTPs to any phone number
-    # with zero proof of identity. Same generic error either way, so a caller
-    # can't use this to probe which phone numbers/emails have accounts.
-    if not user or not user.hashed_otp:
+def confirm_mfa_setup(request: Request, payload: MfaCodeRequest, db: Session = Depends(get_db)):
+    user = _user_from_mfa_token(db, payload.mfa_token, "mfa_setup")
+    if user.mfa_enabled:
+        # A setup token must not be usable once MFA is on.
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No pending verification found. Please try logging in again.",
+            detail="This step has expired. Please log in again.",
         )
 
-    _issue_and_store_otp(db, user, background_tasks)
-    return OtpSentResponse(
-        message="A new OTP has been sent.",
-        expires_in_minutes=settings.otp_expire_minutes,
-    )
-
-
-@router.post("/verify-otp", response_model=TokenResponse)
-@limiter.limit("5/minute")
-def verify_otp_endpoint(request: Request, payload: VerifyOtpRequest, db: Session = Depends(get_db)):
-    user = _get_user_by_identifier(db, payload.phone_number, payload.email)
-    if not user or not user.hashed_otp or not user.otp_expires_at:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No pending OTP for this account")
-
-    expires_at = user.otp_expires_at.replace(tzinfo=timezone.utc)
-    if datetime.now(timezone.utc) > expires_at:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP has expired, please request a new one")
-
-    if not verify_otp(payload.otp, user.hashed_otp):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
-
-    # Single-use: clear it immediately so it can never be replayed.
-    user.hashed_otp = None
-    user.otp_expires_at = None
+    # A correct code proves the secret reached the authenticator app.
+    _check_code(db, user, payload.code)
+    user.mfa_enabled = True
     user.is_verified = True
     db.commit()
+    return _issue_tokens(user)
 
-    access_token = create_access_token(subject=str(user.user_id), role=user.role.value)
-    refresh_token = create_refresh_token(subject=str(user.user_id))
 
-    return TokenResponse(access_token=access_token, refresh_token=refresh_token, role=user.role)
+@router.post("/mfa/verify", response_model=TokenResponse)
+@limiter.limit("5/minute")
+def verify_mfa(request: Request, payload: MfaCodeRequest, db: Session = Depends(get_db)):
+    user = _user_from_mfa_token(db, payload.mfa_token, "mfa_login")
+    if not user.mfa_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This step has expired. Please log in again.",
+        )
+
+    _check_code(db, user, payload.code)
+    return _issue_tokens(user)
 
 
 @router.get("/me", response_model=CurrentUserResponse)
