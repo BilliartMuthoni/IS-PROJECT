@@ -3,7 +3,8 @@
 Crop disease diagnosis for smallholder farmers in Kenya, covering maize, tomato and potato.
 A multimodal model combines a leaf photo with an optional symptom description and returns a
 calibrated confidence score. Confident diagnoses come with treatment guidance from a curated
-knowledge base. Uncertain ones are referred to an agricultural extension officer instead of guessing.
+knowledge base. Uncertain ones are not diagnosed; the farmer is referred to agricultural support
+contacts for their county instead.
 
 ## Repository layout
 

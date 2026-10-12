@@ -1,3 +1,5 @@
+# CPU-only PyTorch for model inference (much smaller than the default CUDA build).
+--extra-index-url https://download.pytorch.org/whl/cpu
 alembic==1.18.4
 annotated-doc==0.0.4
 annotated-types==0.7.0
@@ -54,6 +56,8 @@ six==1.17.0
 slowapi==0.1.10
 SQLAlchemy==2.0.48
 starlette==0.52.1
+torch==2.9.1+cpu
+torchvision==0.24.1+cpu
 typer==0.24.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0

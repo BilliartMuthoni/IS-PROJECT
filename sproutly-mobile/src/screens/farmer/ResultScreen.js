@@ -36,9 +36,12 @@ export default function ResultScreen({ route, navigation }) {
     const isReferred = result.is_referred;
     const cropLabel = CROP_LABELS[result.crop] || result.crop;
 
-    const handleContactExpert = () => {
-        // TODO: replace with the real referral contact flow.
-        Alert.alert('Coming soon', 'Contact details for extension officers go here.');
+    const handleSupportContacts = () => {
+        // TODO: replace with the county support-contacts directory (Sprint 4).
+        Alert.alert(
+            'Support contacts',
+            'A list of support contacts for your county is coming soon. For now, contact your county agriculture office or a local agrovet.'
+        );
     };
 
     return (
@@ -75,20 +78,28 @@ export default function ResultScreen({ route, navigation }) {
                                     className="w-10 h-10 rounded-full items-center justify-center mr-3"
                                     style={{ backgroundColor: `${COLORS.expert}1A` }}
                                 >
-                                    <MaterialCommunityIcons name="account-tie" size={20} color={COLORS.expert} />
+                                    <MaterialCommunityIcons name="help-circle-outline" size={20} color={COLORS.expert} />
                                 </View>
                                 <View className="flex-1">
                                     <Text className="text-base font-bold text-gray-800">
-                                        Sent to an extension officer
+                                        We couldn't diagnose this reliably
                                     </Text>
                                     <Text className="text-xs text-gray-500 mt-0.5">{cropLabel}</Text>
                                 </View>
                             </View>
                             <Text className="text-sm text-gray-700 leading-5">{result.referral_message}</Text>
+                            {result.crop_mismatch && (
+                                <Text className="text-sm text-gray-700 leading-5 mt-3">
+                                    We could not diagnose this as{' '}
+                                    <Text className="font-bold">{cropLabel.toLowerCase()}</Text>. If this is not a{' '}
+                                    {cropLabel.toLowerCase()} leaf, choose the correct crop and try again. If it is{' '}
+                                    {cropLabel.toLowerCase()}, use the support contacts below.
+                                </Text>
+                            )}
                         </View>
 
                         <View className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 p-5">
-                            <Text className="text-sm font-bold text-gray-800 mb-2">While you wait</Text>
+                            <Text className="text-sm font-bold text-gray-800 mb-2">Before you treat</Text>
                             <Text className="text-sm text-gray-600 leading-5">
                                 Avoid spraying anything until you have an answer. Treating the wrong problem costs
                                 money and can make the crop worse.
@@ -96,13 +107,13 @@ export default function ResultScreen({ route, navigation }) {
                         </View>
 
                         <TouchableOpacity
-                            onPress={handleContactExpert}
+                            onPress={handleSupportContacts}
                             activeOpacity={0.85}
                             className="mx-5 mt-4 rounded-2xl py-4 items-center flex-row justify-center"
                             style={{ backgroundColor: COLORS.expert }}
                         >
                             <MaterialCommunityIcons name="phone-outline" size={18} color="#FFFFFF" />
-                            <Text className="text-white text-base font-bold ml-2">Contact an officer now</Text>
+                            <Text className="text-white text-base font-bold ml-2">Get support contacts</Text>
                         </TouchableOpacity>
                     </>
                 ) : (
@@ -141,19 +152,19 @@ export default function ResultScreen({ route, navigation }) {
                         <View className="mx-5 mt-4 flex-row px-1">
                             <Ionicons name="information-circle-outline" size={14} color="#8A9690" />
                             <Text className="text-xs text-gray-500 ml-1 flex-1 leading-4">
-                                Not matching what you see? Contact an extension officer rather than treating the
-                                wrong problem.
+                                Not matching what you see? Contact your county agriculture office or a local agrovet
+                                rather than treating the wrong problem.
                             </Text>
                         </View>
 
                         <TouchableOpacity
-                            onPress={handleContactExpert}
+                            onPress={handleSupportContacts}
                             activeOpacity={0.85}
                             className="mx-5 mt-3 bg-white rounded-2xl border border-gray-200 py-4 items-center flex-row justify-center"
                         >
                             <MaterialCommunityIcons name="phone-outline" size={18} color={COLORS.brand} />
                             <Text className="text-forestDeep text-sm font-semibold ml-2">
-                                Talk to an extension officer
+                                Get support contacts
                             </Text>
                         </TouchableOpacity>
                     </>

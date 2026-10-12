@@ -26,11 +26,9 @@ const PLACEHOLDER_NEXT_ACTION = {
 
 const PLACEHOLDER_RECENT = [
     { id: 1, crop: 'Tomato', result: 'Late Blight', when: '2 days ago', status: 'diagnosed' },
-    { id: 2, crop: 'Maize', result: 'With an expert', when: '4 days ago', status: 'referred' },
+    { id: 2, crop: 'Maize', result: 'Referred to support', when: '4 days ago', status: 'referred' },
     { id: 3, crop: 'Tomato', result: 'Healthy', when: '1 week ago', status: 'healthy' },
 ];
-
-const PLACEHOLDER_PENDING_REFERRALS = 1;
 
 const COLORS = {
     brand: '#1B4332',
@@ -42,7 +40,7 @@ const COLORS = {
 
 const STATUS_STYLES = {
     diagnosed: { icon: 'alert-circle-outline', color: COLORS.attention, label: 'Treating' },
-    referred: { icon: 'account-tie', color: COLORS.expert, label: 'With expert' },
+    referred: { icon: 'help-circle-outline', color: COLORS.expert, label: 'Referred' },
     healthy: { icon: 'leaf', color: COLORS.healthy, label: 'Healthy' },
 };
 
@@ -52,9 +50,12 @@ export default function FarmerDashboard({ navigation }) {
 
     const handleDiagnose = () => navigation.navigate('Diagnosis');
 
-    const handleTalkToExpert = () => {
-        // TODO: replace with the real referral contact flow.
-        Alert.alert('Coming soon', 'Contact details for extension officers go here.');
+    const handleSupportContacts = () => {
+        // TODO: replace with the county support-contacts directory (Sprint 4).
+        Alert.alert(
+            'Support contacts',
+            'A list of support contacts for your county is coming soon. For now, contact your county agriculture office or a local agrovet.'
+        );
     };
 
     return (
@@ -127,22 +128,6 @@ export default function FarmerDashboard({ navigation }) {
                             </View>
                         </View>
                     </View>
-                )}
-
-                {/* Pending referral -- only when one is open */}
-                {PLACEHOLDER_PENDING_REFERRALS > 0 && (
-                    <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={handleTalkToExpert}
-                        className="mx-5 mt-3 bg-white rounded-2xl border border-gray-200 px-5 py-4 flex-row items-center"
-                        style={{ borderLeftWidth: 3, borderLeftColor: COLORS.expert }}
-                    >
-                        <MaterialCommunityIcons name="account-tie" size={22} color={COLORS.expert} />
-                        <Text className="flex-1 ml-3 text-sm text-gray-700">
-                            {PLACEHOLDER_PENDING_REFERRALS} case waiting on an extension officer
-                        </Text>
-                        <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-                    </TouchableOpacity>
                 )}
 
                 {/* Sample-data notice */}
@@ -238,13 +223,13 @@ export default function FarmerDashboard({ navigation }) {
 
                 {/* Secondary action */}
                 <TouchableOpacity
-                    onPress={handleTalkToExpert}
+                    onPress={handleSupportContacts}
                     activeOpacity={0.8}
                     className="mx-5 mt-4 bg-white rounded-2xl border border-gray-200 px-5 py-4 flex-row items-center"
                 >
                     <MaterialCommunityIcons name="phone-outline" size={20} color={COLORS.brand} />
                     <View className="flex-1 ml-3">
-                        <Text className="text-sm font-semibold text-gray-800">Talk to an extension officer</Text>
+                        <Text className="text-sm font-semibold text-gray-800">Get support contacts</Text>
                         <Text className="text-xs text-gray-500 mt-0.5">
                             County offices, agrovets and the national hotline
                         </Text>

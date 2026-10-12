@@ -272,7 +272,7 @@ export default function DiagnosisScreen({ navigation }) {
                         <View className="flex-row mt-3 px-1">
                             <Ionicons name="information-circle-outline" size={14} color="#8A9690" />
                             <Text className="text-xs text-gray-500 ml-1 flex-1">
-                                If we can't be confident about the result, we'll send it to an extension officer
+                                If we can't be confident about the result, we'll point you to support contacts
                                 instead of guessing
                             </Text>
                         </View>
