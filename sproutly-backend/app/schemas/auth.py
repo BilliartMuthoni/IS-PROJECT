@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
@@ -32,19 +32,38 @@ class LoginRequest(_RequiresIdentifier):
     password: str
 
 
-class ResendOtpRequest(_RequiresIdentifier):
-    pass
+class MfaCodeRequest(BaseModel):
+    mfa_token: str
+    code: str
 
-
-class VerifyOtpRequest(_RequiresIdentifier):
-    otp: str
-
-    @field_validator("otp")
+    @field_validator("code")
     @classmethod
-    def otp_is_six_digits(cls, v: str) -> str:
+    def code_is_six_digits(cls, v: str) -> str:
+        # Authenticator apps show the code as "123 456"; accept it either way.
+        v = v.replace(" ", "")
         if not v.isdigit() or len(v) != 6:
-            raise ValueError("OTP must be a 6-digit code")
+            raise ValueError("Code must be the 6 digits shown in your authenticator app")
         return v
+
+
+class MfaSetup(BaseModel):
+    # Typed into the authenticator app by hand ("Enter a setup key").
+    secret: str
+    # otpauth:// link; opening it on the phone adds the account to the authenticator app.
+    otpauth_uri: str
+    # The same link as a PNG QR code, for setting up from another screen.
+    qr_code: str
+
+
+class MfaChallengeResponse(BaseModel):
+    """Password accepted; the app must now send a code to the endpoint in next_step."""
+
+    # "setup": confirm the first code at /auth/mfa/setup/confirm.
+    # "verify": send the current code to /auth/mfa/verify.
+    next_step: Literal["setup", "verify"]
+    mfa_token: str
+    expires_in_minutes: int
+    setup: Optional[MfaSetup] = None
 
 
 class TokenResponse(BaseModel):
@@ -52,11 +71,6 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     role: UserRole
-
-
-class OtpSentResponse(BaseModel):
-    message: str
-    expires_in_minutes: int
 
 
 class CurrentUserResponse(BaseModel):

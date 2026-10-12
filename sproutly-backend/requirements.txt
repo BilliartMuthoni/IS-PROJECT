@@ -45,7 +45,9 @@ Pygments==2.19.2
 python-dotenv==1.2.2
 python-jose==3.5.0
 python-multipart==0.0.22
+pyotp==2.10.0
 PyYAML==6.0.3
+qrcode==8.2
 rich==14.3.3
 rich-toolkit==0.19.7
 rignore==0.7.6

@@ -12,8 +12,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
-    otp_expire_minutes: int = 5
-    otp_length: int = 6
+    # Authenticator-app MFA (TOTP, RFC 6238). The key encrypts each user's secret
+    # at rest; a Fernet key from cryptography.fernet.Fernet.generate_key().
+    totp_encryption_key: str
+    totp_issuer: str = "Sproutly"
+    # Lifetime of the token that links the password step to the code step.
+    mfa_token_expire_minutes: int = 5
+    mfa_setup_token_expire_minutes: int = 10
 
     database_url: str
 
@@ -29,14 +34,6 @@ class Settings(BaseSettings):
     # getting a diagnosis. Provisional until calibration in Sprint 4; the classifier
     # never uses a value below 0.5 (see app/core/classifier.py).
     confidence_threshold: float = 0.90
-
-    # Email (OTP delivery). Disabled until SMTP credentials are provided.
-    email_enabled: bool = False
-    smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 587
-    smtp_user: str = ""
-    smtp_password: str = ""
-    smtp_from_name: str = "Sproutly"
 
     @field_validator("upload_dir")
     @classmethod

@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Enum as SqlEnum
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, Enum as SqlEnum, false
 from datetime import datetime, timezone
 from app.db.session import Base
 
@@ -21,8 +21,12 @@ class User(Base):
 
     role = Column(SqlEnum(UserRole, name="user_role"), nullable=False, default=UserRole.farmer)
 
-    hashed_otp = Column(String, nullable=True)
-    otp_expires_at = Column(DateTime, nullable=True)
+    # Authenticator-app MFA. The secret is Fernet-encrypted (see app/core/security.py)
+    # and MFA only counts as on once the user has confirmed a first code.
+    totp_secret_encrypted = Column(String, nullable=True)
+    mfa_enabled = Column(Boolean, nullable=False, default=False, server_default=false())
+    # 30-second time step of the last accepted code, so a code can't be used twice.
+    totp_last_used_step = Column(Integer, nullable=True)
     is_verified = Column(Boolean, nullable=False, default=False)
 
     is_active = Column(Boolean, default=True)
