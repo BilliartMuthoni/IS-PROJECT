@@ -1,99 +1,156 @@
-"""Treatment guidance for the disease classes the system supports.
+"""Treatment guidance for the 11 classes the model predicts.
 
 Grounded content only -- the system retrieves and presents this text as written
 rather than generating advice. Sources should be verified Kenyan agricultural
 references (KALRO, CABI PlantwisePlus, county extension guidance) before this
 is used with real farmers; the entries below are placeholders pending that review.
+Sprint 3 replaces this module with the ChromaDB knowledge base with citations.
+
+Keys are the model's class names (PlantVillage folder names).
 """
 
-from app.models.diagnosis import CropType
-
-# crop -> disease -> guidance
 KNOWLEDGE_BASE = {
-    CropType.maize: {
-        "Maize Leaf Blight": {
-            "summary": "A fungal disease causing long grey-green lesions on the leaves.",
-            "treatment": [
-                "Remove and destroy badly affected lower leaves.",
-                "Apply a registered fungicide containing mancozeb, following the label rate.",
-                "Avoid overhead irrigation late in the day.",
-            ],
-            "prevention": [
-                "Rotate away from maize for at least one season.",
-                "Plant tolerant varieties where available.",
-                "Clear crop residue after harvest.",
-            ],
-        },
-        "Maize Common Rust": {
-            "summary": "Small reddish-brown pustules scattered across both leaf surfaces.",
-            "treatment": [
-                "Apply a registered fungicide at first sign if the crop is still early.",
-                "Do not spray within the pre-harvest interval on the label.",
-            ],
-            "prevention": [
-                "Plant early to avoid peak rust pressure.",
-                "Use resistant varieties where available.",
-            ],
-        },
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+        "name": "Maize Gray Leaf Spot",
+        "summary": "Long, narrow grey to tan rectangular lesions running between the leaf veins.",
+        "treatment": [
+            "Apply a registered fungicide if lesions reach the upper leaves before tasselling, following the label rate.",
+            "Remove heavily affected lower leaves where practical.",
+        ],
+        "prevention": [
+            "Rotate away from maize for at least one season.",
+            "Bury or clear infected crop residue after harvest.",
+            "Plant tolerant varieties where available.",
+        ],
     },
-    CropType.tomato: {
-        "Tomato Late Blight": {
-            "summary": "Dark water-soaked patches that spread quickly in cool, wet weather.",
-            "treatment": [
-                "Remove and bury affected plants away from the field.",
-                "Apply a registered fungicide, repeating as directed on the label.",
-                "Avoid working in the crop while foliage is wet.",
-            ],
-            "prevention": [
-                "Improve spacing and drainage to reduce leaf wetness.",
-                "Use certified disease-free seed or seedlings.",
-                "Do not plant tomatoes after potatoes on the same plot.",
-            ],
-        },
-        "Tomato Early Blight": {
-            "summary": "Brown spots with concentric rings, usually starting on older leaves.",
-            "treatment": [
-                "Remove affected lower leaves and destroy them.",
-                "Apply a registered fungicide following label instructions.",
-            ],
-            "prevention": [
-                "Mulch to stop soil splashing onto lower leaves.",
-                "Rotate with a non-solanaceous crop.",
-            ],
-        },
+    "Corn_(maize)___Common_rust_": {
+        "name": "Maize Common Rust",
+        "summary": "Small reddish-brown pustules scattered across both leaf surfaces.",
+        "treatment": [
+            "Apply a registered fungicide at first sign if the crop is still early.",
+            "Do not spray within the pre-harvest interval on the label.",
+        ],
+        "prevention": [
+            "Plant early to avoid peak rust pressure.",
+            "Use resistant varieties where available.",
+        ],
     },
-    CropType.potato: {
-        "Potato Late Blight": {
-            "summary": "Rapidly spreading dark lesions on leaves and stems in wet conditions.",
-            "treatment": [
-                "Remove and destroy affected haulms.",
-                "Apply a registered protectant fungicide before rain where possible.",
-                "Harvest only in dry conditions to limit tuber infection.",
-            ],
-            "prevention": [
-                "Plant certified seed potatoes.",
-                "Earth up well to protect developing tubers.",
-                "Rotate away from potatoes and tomatoes.",
-            ],
-        },
-        "Potato Early Blight": {
-            "summary": "Dark spots with concentric rings on older leaves, worse on stressed plants.",
-            "treatment": [
-                "Remove badly affected foliage.",
-                "Apply a registered fungicide as directed.",
-            ],
-            "prevention": [
-                "Keep plants well watered and fed to reduce stress.",
-                "Rotate crops between seasons.",
-            ],
-        },
+    "Corn_(maize)___Northern_Leaf_Blight": {
+        "name": "Maize Northern Leaf Blight",
+        "summary": "A fungal disease causing long grey-green, cigar-shaped lesions on the leaves.",
+        "treatment": [
+            "Remove and destroy badly affected lower leaves.",
+            "Apply a registered fungicide containing mancozeb, following the label rate.",
+            "Avoid overhead irrigation late in the day.",
+        ],
+        "prevention": [
+            "Rotate away from maize for at least one season.",
+            "Plant tolerant varieties where available.",
+            "Clear crop residue after harvest.",
+        ],
+    },
+    "Corn_(maize)___healthy": {
+        "name": "Healthy maize",
+        "summary": "No disease was detected on this leaf.",
+        "treatment": [],
+        "prevention": [
+            "Keep checking the crop weekly, especially the lower leaves.",
+            "Rotate crops between seasons and clear residue after harvest.",
+        ],
+    },
+    "Tomato___Bacterial_spot": {
+        "name": "Tomato Bacterial Spot",
+        "summary": "Small, dark, water-soaked spots on leaves that may turn brown with a yellow edge.",
+        "treatment": [
+            "Remove and destroy badly affected leaves.",
+            "Apply a registered copper-based bactericide, following the label rate.",
+            "Avoid working in the crop while foliage is wet.",
+        ],
+        "prevention": [
+            "Use certified disease-free seed or seedlings.",
+            "Water at the base of the plant rather than over the leaves.",
+            "Rotate away from tomatoes and peppers.",
+        ],
+    },
+    "Tomato___Early_blight": {
+        "name": "Tomato Early Blight",
+        "summary": "Brown spots with concentric rings, usually starting on older leaves.",
+        "treatment": [
+            "Remove affected lower leaves and destroy them.",
+            "Apply a registered fungicide following label instructions.",
+        ],
+        "prevention": [
+            "Mulch to stop soil splashing onto lower leaves.",
+            "Rotate with a non-solanaceous crop.",
+        ],
+    },
+    "Tomato___Late_blight": {
+        "name": "Tomato Late Blight",
+        "summary": "Dark water-soaked patches that spread quickly in cool, wet weather.",
+        "treatment": [
+            "Remove and bury affected plants away from the field.",
+            "Apply a registered fungicide, repeating as directed on the label.",
+            "Avoid working in the crop while foliage is wet.",
+        ],
+        "prevention": [
+            "Improve spacing and drainage to reduce leaf wetness.",
+            "Use certified disease-free seed or seedlings.",
+            "Do not plant tomatoes after potatoes on the same plot.",
+        ],
+    },
+    "Tomato___healthy": {
+        "name": "Healthy tomato",
+        "summary": "No disease was detected on this leaf.",
+        "treatment": [],
+        "prevention": [
+            "Keep checking the crop weekly, especially after cool, wet weather.",
+            "Water at the base of the plant and keep good spacing for air flow.",
+        ],
+    },
+    "Potato___Early_blight": {
+        "name": "Potato Early Blight",
+        "summary": "Dark spots with concentric rings on older leaves, worse on stressed plants.",
+        "treatment": [
+            "Remove badly affected foliage.",
+            "Apply a registered fungicide as directed.",
+        ],
+        "prevention": [
+            "Keep plants well watered and fed to reduce stress.",
+            "Rotate crops between seasons.",
+        ],
+    },
+    "Potato___Late_blight": {
+        "name": "Potato Late Blight",
+        "summary": "Rapidly spreading dark lesions on leaves and stems in wet conditions.",
+        "treatment": [
+            "Remove and destroy affected haulms.",
+            "Apply a registered protectant fungicide before rain where possible.",
+            "Harvest only in dry conditions to limit tuber infection.",
+        ],
+        "prevention": [
+            "Plant certified seed potatoes.",
+            "Earth up well to protect developing tubers.",
+            "Rotate away from potatoes and tomatoes.",
+        ],
+    },
+    "Potato___healthy": {
+        "name": "Healthy potato",
+        "summary": "No disease was detected on this leaf.",
+        "treatment": [],
+        "prevention": [
+            "Keep checking the crop weekly, especially after rain.",
+            "Plant certified seed potatoes and rotate away from potatoes and tomatoes.",
+        ],
     },
 }
 
 
-def get_guidance(crop: CropType, disease: str):
-    return KNOWLEDGE_BASE.get(crop, {}).get(disease)
+def display_name(class_name: str) -> str:
+    return KNOWLEDGE_BASE.get(class_name, {}).get("name", class_name)
 
 
-def diseases_for_crop(crop: CropType):
-    return list(KNOWLEDGE_BASE.get(crop, {}).keys())
+def get_guidance(class_name: str):
+    entry = KNOWLEDGE_BASE.get(class_name)
+    if entry is None:
+        return None
+    return {key: entry[key] for key in ("summary", "treatment", "prevention")}

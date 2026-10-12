@@ -23,9 +23,12 @@ class Settings(BaseSettings):
 
     # Diagnosis
     upload_dir: str = "uploads"
-    # Below this calibrated confidence the case is deferred to an extension officer
-    # instead of returning a prediction.
-    confidence_threshold: float = 0.70
+    # Trained image model exported by ml/notebooks/08_image_baseline.ipynb (not in Git).
+    ml_model_path: str = "models/image_baseline/model.pt"
+    # Below this confidence the farmer is referred to support contacts instead of
+    # getting a diagnosis. Provisional until calibration in Sprint 4; the classifier
+    # never uses a value below 0.5 (see app/core/classifier.py).
+    confidence_threshold: float = 0.90
 
     # Email (OTP delivery). Disabled until SMTP credentials are provided.
     email_enabled: bool = False
@@ -40,6 +43,11 @@ class Settings(BaseSettings):
     def upload_dir_not_blank(cls, v: str) -> str:
         # A blank value in .env would otherwise override the default and break saving.
         return v.strip() or "uploads"
+
+    @field_validator("ml_model_path")
+    @classmethod
+    def ml_model_path_not_blank(cls, v: str) -> str:
+        return v.strip() or "models/image_baseline/model.pt"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

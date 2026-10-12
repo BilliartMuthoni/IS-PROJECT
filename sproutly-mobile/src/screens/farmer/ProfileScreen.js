@@ -137,7 +137,7 @@ export default function ProfileScreen({ navigation }) {
                             <Text className="text-sm font-bold text-gray-800 mb-2">What Sproutly can check</Text>
                             <Text className="text-sm text-gray-600 leading-5">
                                 Diseases of maize, tomato and potato. Anything else, including pests and soil
-                                problems, needs an extension officer.
+                                problems, needs local support such as your county agriculture office or an agrovet.
                             </Text>
                         </View>
 

@@ -34,7 +34,7 @@ export default function LandingScreen({ navigation }) {
                             Sproutly
                         </Text>
                         <Text className="text-base text-white text-center opacity-85 mt-0.5 px-5">
-                            Confidence-calibrated crop disease diagnosis for Kenyan farmers
+                            Crop disease diagnosis for Kenyan farmers
                         </Text>
                     </View>
 

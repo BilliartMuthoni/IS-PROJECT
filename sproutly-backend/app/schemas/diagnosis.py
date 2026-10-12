@@ -22,6 +22,9 @@ class DiagnosisResponse(BaseModel):
     guidance: Optional[Guidance] = None
     # Present only when the case was deferred.
     referral_message: Optional[str] = None
+    # True when most of the probability belonged to a crop other than the one chosen,
+    # so the app can suggest checking the crop. The other crop is never named.
+    crop_mismatch: bool = False
     created_at: datetime
 
 
@@ -31,7 +34,6 @@ class DiagnosisListItem(BaseModel):
     predicted_disease: Optional[str] = None
     confidence: float
     is_referred: bool
-    officer_response: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
