@@ -10,7 +10,8 @@ import { AuthContext, AuthProvider } from './src/context/AuthContext';
 import LandingScreen from './src/screens/auth/LandingScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
-import OTPScreen from './src/screens/auth/OTPScreen';
+import MfaSetupScreen from './src/screens/auth/MfaSetupScreen';
+import MfaCodeScreen from './src/screens/auth/MfaCodeScreen';
 
 // Splash Screen
 import SplashScreen from './src/screens/SplashScreen.js';
@@ -39,7 +40,8 @@ const RootNavigator = () => {
                         <Stack.Screen name="Landing" component={LandingScreen} />
                         <Stack.Screen name="Login" component={LoginScreen} />
                         <Stack.Screen name="SignUp" component={SignUpScreen} />
-                        <Stack.Screen name="OTP" component={OTPScreen} />
+                        <Stack.Screen name="MfaSetup" component={MfaSetupScreen} />
+                        <Stack.Screen name="MfaCode" component={MfaCodeScreen} />
                     </>
                 ) : (
                     <>

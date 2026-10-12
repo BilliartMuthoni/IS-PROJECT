@@ -54,24 +54,23 @@ export async function fetchCurrentUser({ token }) {
     }
 }
 
-export async function resendOtp({ phoneNumber, email }) {
+// register and login both answer with an MFA challenge: next_step is "setup"
+// (add Sproutly to an authenticator app first) or "verify" (just enter the code).
+
+/** First code from the authenticator app; turns MFA on and logs the user in. */
+export async function confirmMfaSetup({ mfaToken, code }) {
     try {
-        const payload = {};
-        if (phoneNumber) payload.phone_number = phoneNumber;
-        if (email) payload.email = email;
-        const { data } = await client.post('/auth/resend-otp', payload);
+        const { data } = await client.post('/auth/mfa/setup/confirm', { mfa_token: mfaToken, code });
         return data;
     } catch (error) {
         throw new Error(extractErrorMessage(error));
     }
 }
 
-export async function verifyOtp({ phoneNumber, email, otp }) {
+/** Code from the authenticator app after the password; returns the session tokens. */
+export async function verifyMfa({ mfaToken, code }) {
     try {
-        const payload = { otp };
-        if (phoneNumber) payload.phone_number = phoneNumber;
-        if (email) payload.email = email;
-        const { data } = await client.post('/auth/verify-otp', payload);
+        const { data } = await client.post('/auth/mfa/verify', { mfa_token: mfaToken, code });
         return data;
     } catch (error) {
         throw new Error(extractErrorMessage(error));
