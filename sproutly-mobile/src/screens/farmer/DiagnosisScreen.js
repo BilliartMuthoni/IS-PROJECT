@@ -7,7 +7,6 @@ import {
     TextInput,
     Image,
     Alert,
-    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
@@ -19,18 +18,36 @@ import { AuthContext } from '../../context/AuthContext';
 import { submitDiagnosis } from '../../api/DiagnosisService';
 import { toFriendlyError } from '../../utils/errorMessages';
 import ErrorBanner from '../../components/ErrorBanner';
+import ScreenHeader from '../../components/ScreenHeader';
+import { PrimaryButton } from '../../components/Buttons';
+import { COLORS } from '../../constants/theme';
 
 const CROPS = [
-    { id: 'maize', label: 'Maize', icon: 'corn' },
-    { id: 'tomato', label: 'Tomato', icon: 'fruit-cherries' },
-    { id: 'potato', label: 'Potato', icon: 'sprout' },
+    { id: 'maize', label: 'Maize' },
+    { id: 'tomato', label: 'Tomato' },
+    { id: 'potato', label: 'Potato' },
 ];
 
-const COLORS = {
-    brand: '#1B4332',
-    brandLight: '#2D5A43',
-    attention: '#B4622A',
-};
+function Label({ title, hint, optional }) {
+    return (
+        <>
+            <Text className="text-base font-bold" style={{ color: COLORS.ink }}>
+                {title}
+                {optional && (
+                    <Text className="font-normal" style={{ color: COLORS.faint }}>
+                        {' '}
+                        (optional)
+                    </Text>
+                )}
+            </Text>
+            {hint && (
+                <Text className="text-sm mt-0.5 mb-3 leading-5" style={{ color: COLORS.muted }}>
+                    {hint}
+                </Text>
+            )}
+        </>
+    );
+}
 
 export default function DiagnosisScreen({ navigation }) {
     const { userToken } = useContext(AuthContext);
@@ -105,54 +122,37 @@ export default function DiagnosisScreen({ navigation }) {
     };
 
     const canSubmit = crop && image && !submitting;
+    const missing = !crop && !image ? 'Choose a crop and add a photo' : !crop ? 'Choose a crop' : !image ? 'Add a photo' : null;
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F5F7F4' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
             <StatusBar style="dark" />
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                className="flex-1"
-            >
-                <ScrollView contentContainerClassName="pb-10" keyboardShouldPersistTaps="handled">
-                    {/* Header */}
-                    <View className="flex-row items-center px-5 pt-4 pb-2">
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            className="w-10 h-10 rounded-full bg-white border border-gray-200 items-center justify-center mr-3"
-                        >
-                            <Ionicons name="arrow-back" size={20} color={COLORS.brand} />
-                        </TouchableOpacity>
-                        <Text className="text-xl font-bold text-forestDeep">Diagnose a crop</Text>
-                    </View>
-
-                    {/* Step 1: crop */}
-                    <View className="px-5 mt-4">
-                        <Text className="text-sm font-bold text-gray-800 mb-1">1. Which crop is it?</Text>
-                        <Text className="text-xs text-gray-500 mb-3">
-                            This narrows the search to diseases that affect that crop
-                        </Text>
+            <ScreenHeader title="Check a leaf" onBack={() => navigation.goBack()} />
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
+                <ScrollView contentContainerClassName="px-5 pb-8" keyboardShouldPersistTaps="handled">
+                    {/* Crop */}
+                    <View className="mt-2">
+                        <Label title="Which crop is it?" hint="Only that crop's diseases are considered" />
                         <View className="flex-row">
-                            {CROPS.map((item, index) => {
+                            {CROPS.map((item) => {
                                 const selected = crop === item.id;
-                                const isLast = index === CROPS.length - 1;
                                 return (
                                     <TouchableOpacity
                                         key={item.id}
                                         onPress={() => setCrop(item.id)}
                                         activeOpacity={0.8}
-                                        className={`flex-1 ${isLast ? '' : 'mr-2'} rounded-2xl border py-4 items-center ${
-                                            selected ? 'bg-forestDeep border-forestDeep' : 'bg-white border-gray-200'
-                                        }`}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ selected }}
+                                        className="mr-2 px-5 py-2.5 rounded-full"
+                                        style={{
+                                            backgroundColor: selected ? COLORS.brand : COLORS.surface,
+                                            borderWidth: 1,
+                                            borderColor: selected ? COLORS.brand : COLORS.divider,
+                                        }}
                                     >
-                                        <MaterialCommunityIcons
-                                            name={item.icon}
-                                            size={24}
-                                            color={selected ? '#FFFFFF' : COLORS.brandLight}
-                                        />
                                         <Text
-                                            className={`text-sm font-semibold mt-1.5 ${
-                                                selected ? 'text-white' : 'text-gray-700'
-                                            }`}
+                                            className="text-base font-semibold"
+                                            style={{ color: selected ? '#FFFFFF' : COLORS.text }}
                                         >
                                             {item.label}
                                         </Text>
@@ -162,65 +162,67 @@ export default function DiagnosisScreen({ navigation }) {
                         </View>
                     </View>
 
-                    {/* Step 2: photo */}
-                    <View className="px-5 mt-6">
-                        <Text className="text-sm font-bold text-gray-800 mb-1">2. Photo of the affected leaf</Text>
-                        <Text className="text-xs text-gray-500 mb-3">
-                            Fill the frame with one leaf, in good light, against a plain background
-                        </Text>
-
+                    {/* Photo */}
+                    <View className="mt-8">
+                        <Label
+                            title="Photo of the affected leaf"
+                            hint="One leaf filling the frame, in daylight, against a plain background"
+                        />
                         {image ? (
-                            <View className="rounded-2xl overflow-hidden border border-gray-200 bg-white">
-                                <Image
-                                    source={{ uri: image.uri }}
-                                    className="w-full h-64"
-                                    resizeMode="cover"
-                                />
-                                <View className="flex-row border-t border-gray-200">
-                                    <TouchableOpacity
-                                        onPress={choosePhoto}
-                                        className="flex-1 py-3 items-center flex-row justify-center"
-                                    >
+                            <>
+                                <Image source={{ uri: image.uri }} className="w-full h-64 rounded-xl" resizeMode="cover" />
+                                <View className="flex-row mt-1">
+                                    <TouchableOpacity onPress={choosePhoto} className="py-3 pr-6 flex-row items-center">
                                         <Ionicons name="camera-outline" size={18} color={COLORS.brand} />
-                                        <Text className="text-sm font-semibold text-forestDeep ml-2">Replace</Text>
+                                        <Text className="text-base font-semibold ml-2" style={{ color: COLORS.brand }}>
+                                            Replace
+                                        </Text>
                                     </TouchableOpacity>
-                                    <View className="w-px bg-gray-200" />
-                                    <TouchableOpacity
-                                        onPress={() => setImage(null)}
-                                        className="flex-1 py-3 items-center flex-row justify-center"
-                                    >
-                                        <Ionicons name="trash-outline" size={18} color={COLORS.attention} />
-                                        <Text className="text-sm font-semibold ml-2" style={{ color: COLORS.attention }}>
+                                    <TouchableOpacity onPress={() => setImage(null)} className="py-3 flex-row items-center">
+                                        <Ionicons name="trash-outline" size={18} color={COLORS.disease} />
+                                        <Text className="text-base font-semibold ml-2" style={{ color: COLORS.disease }}>
                                             Remove
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
-                            </View>
+                            </>
                         ) : (
                             <TouchableOpacity
                                 onPress={choosePhoto}
                                 activeOpacity={0.8}
-                                className="bg-white rounded-2xl border-2 border-dashed border-gray-300 py-12 items-center"
+                                accessibilityRole="button"
+                                className="rounded-xl py-10 items-center"
+                                style={{
+                                    backgroundColor: COLORS.surface,
+                                    borderWidth: 1.5,
+                                    borderStyle: 'dashed',
+                                    borderColor: '#B9C4BD',
+                                }}
                             >
-                                <MaterialCommunityIcons name="camera-plus" size={36} color={COLORS.brandLight} />
-                                <Text className="text-sm font-semibold text-forestDeep mt-2">Add a photo</Text>
-                                <Text className="text-xs text-gray-500 mt-0.5">Take one now or pick from gallery</Text>
+                                <MaterialCommunityIcons name="camera-plus-outline" size={34} color={COLORS.brand} />
+                                <Text className="text-base font-semibold mt-2" style={{ color: COLORS.brand }}>
+                                    Add a photo
+                                </Text>
+                                <Text className="text-sm mt-0.5" style={{ color: COLORS.muted }}>
+                                    Take one now or choose from your gallery
+                                </Text>
                             </TouchableOpacity>
                         )}
                     </View>
 
-                    {/* Step 3: symptoms */}
-                    <View className="px-5 mt-6">
-                        <Text className="text-sm font-bold text-gray-800 mb-1">
-                            3. What are you seeing? <Text className="font-normal text-gray-500">(optional)</Text>
-                        </Text>
-                        <Text className="text-xs text-gray-500 mb-3">
-                            Details a photo can't show help when the picture alone is unclear
-                        </Text>
+                    {/* Symptoms */}
+                    <View className="mt-8">
+                        <Label title="What are you seeing?" optional hint="Details a photo can't show, such as when it started" />
                         <TextInput
-                            className="bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 h-28"
-                            placeholder="e.g. Yellow spots started on the lower leaves three days ago and are spreading upwards after heavy rain"
-                            placeholderTextColor="#9CA3AF"
+                            className="rounded-xl px-4 py-3 text-base h-28"
+                            style={{
+                                backgroundColor: COLORS.surface,
+                                borderWidth: 1,
+                                borderColor: COLORS.divider,
+                                color: COLORS.text,
+                            }}
+                            placeholder="e.g. Yellow spots started on the lower leaves three days ago, after heavy rain"
+                            placeholderTextColor={COLORS.faint}
                             multiline
                             textAlignVertical="top"
                             value={symptoms}
@@ -228,56 +230,35 @@ export default function DiagnosisScreen({ navigation }) {
                         />
                     </View>
 
-                    {/* Submit */}
-                    <View className="px-5 mt-6">
-                        {error && (
-                            <View className="mb-3">
-                                <ErrorBanner
-                                    error={error}
-                                    onRetry={handleSubmit}
-                                    onDismiss={() => setError(null)}
-                                />
-                            </View>
-                        )}
-
-                        <TouchableOpacity
-                            onPress={handleSubmit}
-                            disabled={!canSubmit}
-                            activeOpacity={0.85}
-                            className={`rounded-2xl py-4 items-center ${
-                                canSubmit ? 'bg-forestDeep' : 'bg-gray-300'
-                            }`}
-                        >
-                            {submitting ? (
-                                <View className="flex-row items-center">
-                                    <ActivityIndicator color="#FFFFFF" />
-                                    <Text className="text-white text-base font-bold ml-3">Sending photo…</Text>
-                                </View>
-                            ) : (
-                                <Text className="text-white text-base font-bold">Check this crop</Text>
-                            )}
-                        </TouchableOpacity>
-
-                        {/* Say what's still missing rather than leaving a dead grey button */}
-                        {!crop || !image ? (
-                            <Text className="text-xs text-gray-500 text-center mt-2">
-                                {!crop && !image
-                                    ? 'Choose a crop and add a photo to continue'
-                                    : !crop
-                                      ? 'Choose a crop to continue'
-                                      : 'Add a photo to continue'}
-                            </Text>
-                        ) : null}
-
-                        <View className="flex-row mt-3 px-1">
-                            <Ionicons name="information-circle-outline" size={14} color="#8A9690" />
-                            <Text className="text-xs text-gray-500 ml-1 flex-1">
-                                If we can't be confident about the result, we'll point you to support contacts
-                                instead of guessing
-                            </Text>
-                        </View>
-                    </View>
+                    <Text className="text-sm mt-6 leading-5" style={{ color: COLORS.muted }}>
+                        If we can't be confident about the result, we'll point you to support contacts instead of
+                        guessing.
+                    </Text>
                 </ScrollView>
+
+                {/* Pinned at the bottom so the next step is always in reach */}
+                <View
+                    className="px-5 pt-3 pb-4"
+                    style={{ backgroundColor: COLORS.background, borderTopWidth: 1, borderTopColor: COLORS.divider }}
+                >
+                    {error && (
+                        <View className="mb-3">
+                            <ErrorBanner error={error} onRetry={handleSubmit} onDismiss={() => setError(null)} />
+                        </View>
+                    )}
+                    <PrimaryButton
+                        label="Check this leaf"
+                        loadingLabel="Sending photo…"
+                        onPress={handleSubmit}
+                        disabled={!canSubmit && !submitting}
+                        loading={submitting}
+                    />
+                    {missing && (
+                        <Text className="text-sm text-center mt-2" style={{ color: COLORS.muted }}>
+                            {missing} to continue
+                        </Text>
+                    )}
+                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
