@@ -24,14 +24,16 @@ def status(repo: Path) -> str:
     return _git(repo, "status", "--short", "--branch")
 
 
-def push(repo: Path, branch: str, message: str, token: str, name: str, email: str) -> str:
-    if not _git(repo, "status", "--porcelain"):
+def push(repo: Path, branch: str, message: str, token: str, name: str, email: str,
+         paths: list[str] | None = None) -> str:
+    """Commit everything, or only `paths` (relative to the repo) when given, to a new branch."""
+    if not _git(repo, "status", "--porcelain", "--", *(paths or [])):
         return "Nothing to commit."
 
     _git(repo, "switch", "-c", branch)
     committed = False
     try:
-        _git(repo, "add", "-A")
+        _git(repo, "add", "-A", "--", *(paths or ["."]))
         _git(repo, "-c", f"user.name={name}", "-c", f"user.email={email}", "commit", "-m", message)
         committed = True
 
