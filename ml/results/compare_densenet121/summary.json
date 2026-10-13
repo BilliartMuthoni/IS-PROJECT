@@ -1,0 +1,9 @@
+{
+  "architecture": "densenet121",
+  "parameters_millions": 6.965131,
+  "best_epoch": 10,
+  "epochs_run": 14,
+  "minutes_training": 21.588964251677194,
+  "file_mb": 28.416151,
+  "cpu_ms_per_image": 124.65230199995858
+}
