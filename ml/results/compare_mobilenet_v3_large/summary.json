@@ -1,0 +1,9 @@
+{
+  "architecture": "mobilenet_v3_large",
+  "parameters_millions": 4.216123,
+  "best_epoch": 14,
+  "epochs_run": 15,
+  "minutes_training": 20.09412434895833,
+  "file_mb": 17.054739,
+  "cpu_ms_per_image": 28.900140500127236
+}
