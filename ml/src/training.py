@@ -1,4 +1,7 @@
-"""Fine-tune an ImageNet-pretrained EfficientNet-B0 on the split images.
+"""Fine-tune an ImageNet-pretrained network on the split images.
+
+EfficientNet-B0 is the baseline; the other ARCHITECTURES are trained the same
+way for the comparison in notebook 09.
 
 One epoch = one pass over the training images. After each epoch the model is
 scored on validation; the best epoch (by macro-F1) is kept in best.pt and the
@@ -17,10 +20,21 @@ import pandas as pd
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
+from torchvision import models
 from tqdm.auto import tqdm
 
 from src import metrics
+
+# Every architecture in the comparison: its torchvision constructor and the ImageNet
+# weights it starts from (the best set torchvision publishes for each).
+ARCHITECTURES = {
+    "efficientnet_b0": (models.efficientnet_b0, models.EfficientNet_B0_Weights.IMAGENET1K_V1),
+    "mobilenet_v3_large": (models.mobilenet_v3_large, models.MobileNet_V3_Large_Weights.IMAGENET1K_V2),
+    "resnet50": (models.resnet50, models.ResNet50_Weights.IMAGENET1K_V2),
+    "densenet121": (models.densenet121, models.DenseNet121_Weights.IMAGENET1K_V1),
+    "convnext_tiny": (models.convnext_tiny, models.ConvNeXt_Tiny_Weights.IMAGENET1K_V1),
+    "swin_t": (models.swin_t, models.Swin_T_Weights.IMAGENET1K_V1),
+}
 
 
 def seed_everything(seed: int) -> None:
@@ -30,11 +44,43 @@ def seed_everything(seed: int) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-def build_model(num_classes: int, pretrained: bool = True) -> nn.Module:
-    """EfficientNet-B0 with its 1000-class ImageNet head replaced by one for our classes."""
-    model = efficientnet_b0(weights=EfficientNet_B0_Weights.IMAGENET1K_V1 if pretrained else None)
-    model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+def _head(model: nn.Module) -> tuple[str, nn.Linear]:
+    """The output layer: the last Linear layer in every architecture above."""
+    return [(name, layer) for name, layer in model.named_modules() if isinstance(layer, nn.Linear)][-1]
+
+
+def build_model(num_classes: int, architecture: str = "efficientnet_b0", pretrained: bool = True) -> nn.Module:
+    """The network with its 1000-class ImageNet output layer replaced by one for our classes."""
+    constructor, weights = ARCHITECTURES[architecture]
+    model = constructor(weights=weights if pretrained else None)
+    name, layer = _head(model)
+    parent, _, attribute = name.rpartition(".")
+    setattr(model.get_submodule(parent), attribute, nn.Linear(layer.in_features, num_classes))
     return model
+
+
+def count_parameters(model: nn.Module) -> int:
+    return sum(p.numel() for p in model.parameters())
+
+
+@torch.no_grad()
+def cpu_milliseconds_per_image(model: nn.Module, image_size: int, threads: int = 2, runs: int = 30) -> float:
+    """Median time to classify one image on the CPU, as the backend does (no GPU)."""
+    previous = torch.get_num_threads()
+    torch.set_num_threads(threads)
+    model = model.cpu().eval()
+    image = torch.randn(1, 3, image_size, image_size)
+    try:
+        for _ in range(5):  # warm-up runs are not timed
+            model(image)
+        times = []
+        for _ in range(runs):
+            began = time.perf_counter()
+            model(image)
+            times.append((time.perf_counter() - began) * 1000)
+    finally:
+        torch.set_num_threads(previous)
+    return float(np.median(times))
 
 
 @torch.no_grad()
@@ -90,7 +136,7 @@ def fit(model, train_loader, val_loader, run_dir: Path, settings: dict, device: 
         start = len(history)
         print(f"Resuming after epoch {start} (best validation macro-F1 so far {best:.4f})")
 
-    num_classes = model.classifier[1].out_features
+    num_classes = _head(model)[1].out_features
     for epoch in range(start, settings["epochs"]):
         began = time.time()
         train_loss = _train_epoch(model, train_loader, optimizer, scheduler, scaler, device)
@@ -118,10 +164,11 @@ def fit(model, train_loader, val_loader, run_dir: Path, settings: dict, device: 
     return pd.DataFrame(history)
 
 
-def export(model: nn.Module, classes: list[str], image_size: int, mean, std, path: Path, settings: dict) -> None:
+def export(model: nn.Module, classes: list[str], image_size: int, mean, std, path: Path, settings: dict,
+           architecture: str = "efficientnet_b0") -> None:
     """Save the weights plus everything the backend needs to use them (one self-contained file)."""
     torch.save({
-        "architecture": "efficientnet_b0",
+        "architecture": architecture,
         "state_dict": model.state_dict(),
         "classes": classes,
         "image_size": image_size,
