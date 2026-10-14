@@ -1,0 +1,10 @@
+{
+  "architecture": "convnext_tiny",
+  "learning_rate": 0.0001,
+  "parameters_millions": 27.828587,
+  "best_epoch": 15,
+  "epochs_run": 15,
+  "minutes_training": 23.789106488227844,
+  "file_mb": 111.367515,
+  "cpu_ms_per_image": 134.77102849992662
+}
