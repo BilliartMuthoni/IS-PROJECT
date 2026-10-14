@@ -1,0 +1,17 @@
+{
+  "architecture": "swin_t (ImageNet weights: IMAGENET1K_V1)",
+  "image_size": 224,
+  "batch_size": 64,
+  "epochs": 15,
+  "patience": 4,
+  "learning_rate": 0.001,
+  "weight_decay": 0.01,
+  "seed": 42,
+  "train_sources": [
+    "plantvillage",
+    "fieldplant",
+    "tanzania"
+  ],
+  "gpu": "Tesla T4",
+  "torch": "2.11.0+cu130"
+}
