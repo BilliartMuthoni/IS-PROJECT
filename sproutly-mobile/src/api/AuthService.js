@@ -67,6 +67,27 @@ export async function confirmMfaSetup({ mfaToken, code }) {
     }
 }
 
+/** Sign-in options the backend has switched on, e.g. ["github"]. */
+export async function fetchSignInProviders() {
+    try {
+        const { data } = await client.get('/auth/oauth/providers');
+        return data.providers;
+    } catch {
+        // No buttons is better than a broken screen; password login still works.
+        return [];
+    }
+}
+
+/** Swap the one-time code from a GitHub sign-in for tokens (or an authenticator challenge). */
+export async function exchangeOAuthCode({ code, codeVerifier }) {
+    try {
+        const { data } = await client.post('/auth/oauth/exchange', { code, code_verifier: codeVerifier });
+        return data;
+    } catch (error) {
+        throw new Error(extractErrorMessage(error));
+    }
+}
+
 /** Code from the authenticator app after the password; returns the session tokens. */
 export async function verifyMfa({ mfaToken, code }) {
     try {
