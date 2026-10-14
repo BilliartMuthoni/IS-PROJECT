@@ -87,7 +87,7 @@ def _check_code(db: Session, user: User, code: str) -> None:
     db.commit()
 
 
-def _issue_tokens(user: User) -> TokenResponse:
+def issue_tokens(user: User) -> TokenResponse:
     return TokenResponse(
         access_token=create_access_token(subject=str(user.user_id), role=user.role.value),
         refresh_token=create_refresh_token(subject=str(user.user_id)),
@@ -156,7 +156,7 @@ def confirm_mfa_setup(request: Request, payload: MfaCodeRequest, db: Session = D
     user.mfa_enabled = True
     user.is_verified = True
     db.commit()
-    return _issue_tokens(user)
+    return issue_tokens(user)
 
 
 @router.post("/mfa/verify", response_model=TokenResponse)
@@ -170,7 +170,7 @@ def verify_mfa(request: Request, payload: MfaCodeRequest, db: Session = Depends(
         )
 
     _check_code(db, user, payload.code)
-    return _issue_tokens(user)
+    return issue_tokens(user)
 
 
 @router.get("/me", response_model=CurrentUserResponse)

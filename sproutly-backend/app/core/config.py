@@ -20,6 +20,17 @@ class Settings(BaseSettings):
     mfa_token_expire_minutes: int = 5
     mfa_setup_token_expire_minutes: int = 10
 
+    # Continue with GitHub / Google (OAuth 2.0). A blank client ID switches that provider off.
+    # public_base_url is the backend's address as the phone's browser reaches it; callback
+    # addresses are built from it and must match those registered with each provider.
+    public_base_url: str = "http://localhost:8000"
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    # Where the backend may send the one-time login code: the app's own links only
+    # (exp:// is Expo Go during development, sproutly:// the installed app).
+    oauth_app_redirect_prefixes: list[str] = ["exp://", "sproutly://"]
+    oauth_flow_expire_minutes: int = 10
+
     database_url: str
 
     # Browser origins allowed to call the API (the admin web app). The mobile app
