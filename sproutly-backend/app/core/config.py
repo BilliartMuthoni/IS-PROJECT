@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     public_base_url: str = ""
     github_client_id: str = ""
     github_client_secret: str = ""
+    google_client_id: str = ""
+    google_client_secret: str = ""
     # Where the backend may send the one-time login code: the app's own links only
     # (exp:// is Expo Go during development, sproutly:// the installed app).
     oauth_app_redirect_prefixes: list[str] = ["exp://", "sproutly://"]

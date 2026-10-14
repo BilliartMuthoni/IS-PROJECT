@@ -35,7 +35,12 @@ export async function signInWith(provider) {
         `${API_BASE_URL}/auth/oauth/${provider}/start` +
         `?redirect_uri=${encodeURIComponent(returnUrl)}&code_challenge=${encodeURIComponent(challenge)}`;
 
-    const result = await WebBrowser.openAuthSessionAsync(startUrl, returnUrl);
+    // Android: by default Expo launches the tab through a proxy activity that keeps it alive
+    // after the person leaves it, so an unfinished sign-in resurfaces on the next tap (even on
+    // the other provider's button). Without the proxy the tab opens with "no history": it
+    // closes as soon as it is left, including when the sign-in returns to the app.
+    // (createTask: false avoided the stale tab but left the finished page on top of the app.)
+    const result = await WebBrowser.openAuthSessionAsync(startUrl, returnUrl, { useProxyActivity: false });
     if (result.type !== 'success') return null;
 
     const { queryParams } = Linking.parse(result.url);
