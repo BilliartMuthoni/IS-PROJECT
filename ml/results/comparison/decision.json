@@ -1,0 +1,25 @@
+{
+  "rule": "highest val field macro-F1; within 0.005 counts as tied, then lowest val field ECE; at most 1000 ms per image on CPU",
+  "ranking_by_val_field_macro_f1": [
+    "resnet50",
+    "convnext_tiny_lr1e-04",
+    "efficientnet_b0",
+    "swin_t",
+    "convnext_tiny",
+    "mobilenet_v3_large",
+    "densenet121"
+  ],
+  "best_single_model": "resnet50",
+  "ensembles": {
+    "ensemble: resnet50 + convnext_tiny_lr1e-04": [
+      "resnet50",
+      "convnext_tiny_lr1e-04"
+    ],
+    "ensemble: resnet50 + convnext_tiny_lr1e-04 + efficientnet_b0": [
+      "resnet50",
+      "convnext_tiny_lr1e-04",
+      "efficientnet_b0"
+    ]
+  },
+  "chosen": "resnet50"
+}
