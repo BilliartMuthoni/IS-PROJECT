@@ -1,6 +1,8 @@
 import base64
+import hashlib
 import hmac
 import io
+import secrets
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -70,6 +72,25 @@ def decode_token(token: str) -> Optional[dict]:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
     except JWTError:
         return None
+
+
+# --- One-time codes for sign-in with GitHub / Google ---
+
+def new_url_token() -> str:
+    """Random value safe to put in a link (256 bits)."""
+    return secrets.token_urlsafe(32)
+
+
+def hash_token(token: str) -> str:
+    """Stored instead of the one-time code itself, so a database leak can't be used to log in."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def pkce_challenge(verifier: str) -> str:
+    """PKCE (RFC 7636, S256): the challenge sent first is the hash of a verifier revealed only at the end,
+    so whoever finishes the sign-in must be whoever started it."""
+    digest = hashlib.sha256(verifier.encode()).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
 
 
 # --- Authenticator app (TOTP) ---

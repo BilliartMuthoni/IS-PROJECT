@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.routers.auth import router as auth_router
 from app.routers.diagnosis import router as diagnosis_router
+from app.routers.oauth import router as oauth_router
 
 
 @asynccontextmanager
@@ -35,6 +36,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(diagnosis_router)
+app.include_router(oauth_router)
 
 @app.get("/")
 def message():

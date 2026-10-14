@@ -73,6 +73,28 @@ class TokenResponse(BaseModel):
     role: UserRole
 
 
+class OAuthExchangeRequest(BaseModel):
+    # One-time login code the backend sent to the app's link after GitHub sign-in.
+    code: str
+    # PKCE verifier the app generated before opening the browser (RFC 7636: 43-128 characters).
+    code_verifier: str
+
+    @field_validator("code_verifier")
+    @classmethod
+    def verifier_length(cls, v: str) -> str:
+        if not 43 <= len(v) <= 128:
+            raise ValueError("code_verifier must be 43-128 characters")
+        return v
+
+
+class OAuthLoginResponse(BaseModel):
+    """Exactly one is set: tokens to log in, or an authenticator challenge for an
+    existing account that already has MFA switched on."""
+
+    tokens: Optional[TokenResponse] = None
+    challenge: Optional[MfaChallengeResponse] = None
+
+
 class CurrentUserResponse(BaseModel):
     user_id: int
     user_phone_number: Optional[str] = None
