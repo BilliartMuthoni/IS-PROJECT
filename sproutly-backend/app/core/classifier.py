@@ -1,8 +1,9 @@
-"""Image-only crop disease classifier (EfficientNet-B0, Sprint 2 baseline).
+"""Image-only crop disease classifier (ResNet-50, chosen in the architecture comparison, #41).
 
-Loads the model.pt exported by ml/notebooks/08_image_baseline.ipynb: weights plus
-the class list, image size and normalisation, so preprocessing here matches the
-evaluation transform used in training exactly.
+Loads a model.pt exported by ml/notebooks/08 or 09: the architecture name, weights,
+class list, image size and normalisation, so preprocessing here matches the
+evaluation transform used in training exactly. Any architecture from the comparison
+can be loaded, so switching models is a matter of changing ML_MODEL_PATH.
 
 Crop rule: the farmer says which crop the photo shows. The model still scores all
 11 classes; the answer is the best class *of that crop*, and its confidence is the
@@ -23,13 +24,23 @@ from pathlib import Path
 import torch
 from PIL import Image
 from torch import nn
-from torchvision import transforms
-from torchvision.models import efficientnet_b0
+from torchvision import models, transforms
 
 from app.core.config import settings
 from app.models.diagnosis import CropType
 
 MIN_THRESHOLD = 0.5
+
+# The architectures trained in ml/src/training.py (same names), built without weights;
+# the trained weights come from model.pt.
+_ARCHITECTURES = {
+    "efficientnet_b0": models.efficientnet_b0,
+    "mobilenet_v3_large": models.mobilenet_v3_large,
+    "resnet50": models.resnet50,
+    "densenet121": models.densenet121,
+    "convnext_tiny": models.convnext_tiny,
+    "swin_t": models.swin_t,
+}
 
 # Class-name prefix -> crop, for the PlantVillage class names the model was trained on.
 _CROP_PREFIXES = {
@@ -59,23 +70,33 @@ class Prediction:
         return self.crop_probability < 0.5
 
 
+def _build(architecture: str, num_classes: int) -> nn.Module:
+    """The network with its last Linear layer (the ImageNet output) sized for our classes,
+    exactly as ml/src/training.build_model does, so the saved weights fit."""
+    if architecture not in _ARCHITECTURES:
+        raise ValueError(f"Unsupported model architecture: {architecture!r}")
+    network = _ARCHITECTURES[architecture](weights=None)
+    name, layer = [(n, m) for n, m in network.named_modules() if isinstance(m, nn.Linear)][-1]
+    parent, _, attribute = name.rpartition(".")
+    setattr(network.get_submodule(parent), attribute, nn.Linear(layer.in_features, num_classes))
+    return network
+
+
 class _Model:
     def __init__(self, path: Path):
         if not path.exists():
             raise FileNotFoundError(
                 f"Model file not found at {path.resolve()}. Download model.pt from Google Drive "
-                "(CropDiseaseDiagnosis/models/image_baseline/model.pt) and put it there, "
+                "(CropDiseaseDiagnosis/models/<run>/model.pt) and put it there, "
                 "or set ML_MODEL_PATH in .env."
             )
         saved = torch.load(path, map_location="cpu", weights_only=False)
-        if saved.get("architecture") != "efficientnet_b0":
-            raise ValueError(f"Unsupported model architecture: {saved.get('architecture')!r}")
 
+        self.architecture: str = saved.get("architecture")
         self.classes: list[str] = saved["classes"]
         self.crops = [crop_of(name) for name in self.classes]
 
-        network = efficientnet_b0(weights=None)
-        network.classifier[1] = nn.Linear(network.classifier[1].in_features, len(self.classes))
+        network = _build(self.architecture, len(self.classes))
         network.load_state_dict(saved["state_dict"])
         self.network = network.eval()
 
