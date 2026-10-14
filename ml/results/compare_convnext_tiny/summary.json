@@ -1,0 +1,9 @@
+{
+  "architecture": "convnext_tiny",
+  "parameters_millions": 27.828587,
+  "best_epoch": 3,
+  "epochs_run": 7,
+  "minutes_training": 11.1474173784256,
+  "file_mb": 111.367515,
+  "cpu_ms_per_image": 136.36598799985222
+}
