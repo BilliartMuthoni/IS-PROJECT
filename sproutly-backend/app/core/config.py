@@ -40,8 +40,9 @@ class Settings(BaseSettings):
 
     # Diagnosis
     upload_dir: str = "uploads"
-    # Trained image model exported by ml/notebooks/08_image_baseline.ipynb (not in Git).
-    ml_model_path: str = "models/image_baseline/model.pt"
+    # Trained image model (not in Git): ResNet-50, chosen in the architecture comparison (#41),
+    # exported by ml/notebooks/09_architecture_comparison.ipynb.
+    ml_model_path: str = "models/compare_resnet50/model.pt"
     # Below this confidence the farmer is referred to support contacts instead of
     # getting a diagnosis. Provisional until calibration in Sprint 4; the classifier
     # never uses a value below 0.5 (see app/core/classifier.py).
@@ -56,7 +57,7 @@ class Settings(BaseSettings):
     @field_validator("ml_model_path")
     @classmethod
     def ml_model_path_not_blank(cls, v: str) -> str:
-        return v.strip() or "models/image_baseline/model.pt"
+        return v.strip() or "models/compare_resnet50/model.pt"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
