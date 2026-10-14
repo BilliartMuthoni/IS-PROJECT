@@ -39,6 +39,18 @@ const PATTERNS = [
         retryable: false,
     },
     {
+        match: /oauth account_conflict/i,
+        title: 'Already linked elsewhere',
+        message: 'This email is already linked to a different account on that service. Sign in with that one instead.',
+        retryable: false,
+    },
+    {
+        match: /^oauth |sign-in has expired/i,
+        title: 'Sign-in did not finish',
+        message: 'Something went wrong while signing in. Please try again.',
+        retryable: true,
+    },
+    {
         match: /step has expired/i,
         title: 'This took too long',
         message: 'For your security, go back and log in again.',

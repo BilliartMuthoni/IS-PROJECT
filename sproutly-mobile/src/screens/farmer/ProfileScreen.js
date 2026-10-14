@@ -37,6 +37,8 @@ export default function ProfileScreen({ navigation }) {
     const [error, setError] = useState(null);
 
     const load = useCallback(async () => {
+        // At logout userToken becomes null while this screen is still mounted; don't ask the backend.
+        if (!userToken) return;
         setLoading(true);
         setError(null);
         try {

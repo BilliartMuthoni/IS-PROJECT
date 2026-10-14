@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as AuthService from '../../api/AuthService';
 import { toFriendlyError } from '../../utils/errorMessages';
 import ErrorBanner from '../../components/ErrorBanner';
+import SocialSignIn from '../../components/SocialSignIn';
 
 export default function SignUpScreen({ navigation }) {
     const [authMethod, setAuthMethod] = useState('phone'); // 'phone' or 'email'
@@ -187,6 +188,8 @@ export default function SignUpScreen({ navigation }) {
                                 )}
                             </TouchableOpacity>
                         </View>
+
+                        <SocialSignIn navigation={navigation} />
 
                         <View className="flex-row justify-center mt-6">
                             <Text className="text-white/70 text-sm">Already have an account? </Text>

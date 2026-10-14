@@ -113,11 +113,16 @@ def start(request: Request, provider: str, redirect_uri: str, code_challenge: st
     )
     db.add(flow)
     db.commit()
-    return RedirectResponse(oauth.authorization_url(provider, flow.state, pkce_challenge(verifier)), status_code=status.HTTP_302_FOUND)
+    redirect_uri = oauth.callback_url(provider, str(request.base_url))
+    return RedirectResponse(
+        oauth.authorization_url(provider, flow.state, pkce_challenge(verifier), redirect_uri),
+        status_code=status.HTTP_302_FOUND,
+    )
 
 
 @router.get("/{provider}/callback")
 def callback(
+    request: Request,
     provider: str,
     state: str | None = None,
     code: str | None = None,
@@ -136,7 +141,10 @@ def callback(
         return _back_to_app(flow, error="cancelled")
 
     try:
-        identity = oauth.fetch_identity(provider, code, flow.provider_code_verifier)
+        # The browser arrived here through the registered callback address, so this request's
+        # own address rebuilds exactly the redirect_uri that was sent to the provider.
+        identity = oauth.fetch_identity(provider, code, flow.provider_code_verifier,
+                                        oauth.callback_url(provider, str(request.base_url)))
         user = _find_or_create_user(db, identity)
     except oauth.OAuthError as exc:
         flow.used = True
