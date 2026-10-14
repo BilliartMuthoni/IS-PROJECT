@@ -1,0 +1,9 @@
+{
+  "architecture": "swin_t",
+  "parameters_millions": 27.527813,
+  "best_epoch": 14,
+  "epochs_run": 15,
+  "minutes_training": 24.764347493648533,
+  "file_mb": 110.395471,
+  "cpu_ms_per_image": 166.88150300024063
+}
