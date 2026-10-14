@@ -35,15 +35,19 @@ def is_configured(provider: str) -> bool:
     return provider == "github" and bool(settings.github_client_id and settings.github_client_secret)
 
 
-def callback_url(provider: str) -> str:
-    return f"{settings.public_base_url.rstrip('/')}/auth/oauth/{provider}/callback"
+def callback_url(provider: str, request_base: str) -> str:
+    """Where the provider sends the browser back to: PUBLIC_BASE_URL if set, otherwise the
+    address this request came in on (the laptop's current IP). The provider only accepts
+    addresses registered with it, so a forged Host header cannot redirect anywhere else."""
+    base = settings.public_base_url or request_base
+    return f"{base.rstrip('/')}/auth/oauth/{provider}/callback"
 
 
-def authorization_url(provider: str, state: str, code_challenge: str) -> str:
+def authorization_url(provider: str, state: str, code_challenge: str, redirect_uri: str) -> str:
     """The provider's sign-in page the browser is sent to."""
     query = {
         "client_id": settings.github_client_id,
-        "redirect_uri": callback_url(provider),
+        "redirect_uri": redirect_uri,
         # Read-only: the profile ID and the email addresses with their verified flag.
         "scope": "read:user user:email",
         "state": state,
@@ -53,8 +57,10 @@ def authorization_url(provider: str, state: str, code_challenge: str) -> str:
     return "https://github.com/login/oauth/authorize?" + urlencode(query)
 
 
-def fetch_identity(provider: str, code: str, code_verifier: str) -> Identity:
-    """Swap the callback code for an access token, then read the user's ID and verified email."""
+def fetch_identity(provider: str, code: str, code_verifier: str, redirect_uri: str) -> Identity:
+    """Swap the callback code for an access token, then read the user's ID and verified email.
+
+    redirect_uri must be exactly the one sent to the sign-in page."""
     try:
         with httpx.Client(timeout=TIMEOUT) as client:
             token = client.post(
@@ -64,7 +70,7 @@ def fetch_identity(provider: str, code: str, code_verifier: str) -> Identity:
                     "client_id": settings.github_client_id,
                     "client_secret": settings.github_client_secret,
                     "code": code,
-                    "redirect_uri": callback_url(provider),
+                    "redirect_uri": redirect_uri,
                     "code_verifier": code_verifier,
                 },
             ).json()

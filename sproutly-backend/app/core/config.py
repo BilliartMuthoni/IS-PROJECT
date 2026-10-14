@@ -21,9 +21,10 @@ class Settings(BaseSettings):
     mfa_setup_token_expire_minutes: int = 10
 
     # Continue with GitHub / Google (OAuth 2.0). A blank client ID switches that provider off.
-    # public_base_url is the backend's address as the phone's browser reaches it; callback
-    # addresses are built from it and must match those registered with each provider.
-    public_base_url: str = "http://localhost:8000"
+    # Callback addresses are built from the address the phone used to reach the backend, so a
+    # new Wi-Fi network needs no change here; set public_base_url only to force one address
+    # (e.g. a fixed https tunnel). Either way it must be registered with each provider.
+    public_base_url: str = ""
     github_client_id: str = ""
     github_client_secret: str = ""
     # Where the backend may send the one-time login code: the app's own links only
