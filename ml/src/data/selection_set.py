@@ -21,9 +21,10 @@ Duplicate checks, using the fingerprints already computed for every existing pho
 1. unreadable or too small: dropped.
 2. Same bytes (MD5) as any training-source or PlantDoc photo: dropped.
 3. Near-duplicate (perceptual hash within ``NEAR_DUPLICATE_MAX_DISTANCE`` bits) of any
-   existing photo, directly or mirrored: dropped.
-4. Within the selection set, near-duplicates (including mirrored copies, which some
-   datasets add as augmentation) are not independent photos: one per group is kept.
+   existing photo, as it is or turned (90, 180, 270 degrees) or mirrored: dropped.
+4. Within the selection set, near-duplicates (including turned and mirrored copies,
+   which some datasets add as augmentation) are not independent photos: one per group
+   is kept.
 """
 
 import hashlib
@@ -86,12 +87,14 @@ SOURCES = {
         "Rachin, N. A. S., Likhon, N. M., & Baki, M. A. H. (2025). Tomato Leaf Disease Classification Dataset "
         "(Version 1). Mendeley Data. doi:10.17632/jttrv2w27r.1",
         {"bacterial spot": "Tomato___Bacterial_spot",
+         "bacteiral spot": "Tomato___Bacterial_spot",  # the dataset's own spelling of the folder
          "early blight": "Tomato___Early_blight",
          "late blight": "Tomato___Late_blight",
          "healthy": "Tomato___healthy"},
         {"yellow leaf curl": "not one of our classes",
          "leaf miner": "a pest, not one of our classes",
          "magnesium": "a deficiency, not one of our classes"},
+        manual_sha256="7e24afdb81e0b6b0c189c5588fb57571ebe518b873dc5cb9cd8b52bba4a67069",
     ),
     "potato_holeta": Source(
         "v4w72bsts5", 2, "potato",
@@ -233,21 +236,53 @@ def folder_summary(table: pd.DataFrame) -> pd.DataFrame:
 
 # ------------------------------------------------------------------------ duplicates
 
+# The seven other ways a photo can be turned or flipped; a turned copy is still a copy.
+_TURNS = [None, Image.Transpose.ROTATE_90, Image.Transpose.ROTATE_180, Image.Transpose.ROTATE_270]
+_VARIANTS = [(mirror, turn) for mirror in (False, True) for turn in _TURNS if mirror or turn is not None]
+
+
 def fingerprint(path: Path) -> dict:
-    """The cleaning checks plus the perceptual hash of the mirrored image."""
-    row = cleaning.check_image(path)
-    row["phash_mirrored"] = None
-    if row["error"] is None:
-        with Image.open(io.BytesIO(path.read_bytes())) as image:
-            row["phash_mirrored"] = str(imagehash.phash(ImageOps.mirror(image.convert("RGB"))))
+    """The same checks as ``cleaning.check_image``, decoding the photo once, plus the
+    perceptual hashes of its turned and mirrored versions (``phash_variants``).
+
+    pHash shrinks the photo to 32 x 32 grey pixels before hashing, so the variants are
+    made from that small copy: turning it gives the same pixels as turning the full photo.
+    """
+    row = {"width": None, "height": None, "md5": None, "phash": None, "phash_variants": None, "error": None}
+    try:
+        data = path.read_bytes()
+        row["md5"] = hashlib.md5(data).hexdigest()
+        with Image.open(io.BytesIO(data)) as image:
+            image.verify()
+        # verify() does not decode the pixels; convert() does, so truncated files fail here.
+        with Image.open(io.BytesIO(data)) as image:
+            rgb = image.convert("RGB")
+        row["width"], row["height"] = rgb.size
+        small = rgb.convert("L").resize((32, 32), Image.Resampling.LANCZOS)
+        row["phash"] = str(imagehash.phash(small))
+        variants = []
+        for mirror, turn in _VARIANTS:
+            copy = ImageOps.mirror(small) if mirror else small
+            variants.append(str(imagehash.phash(copy.transpose(turn) if turn is not None else copy)))
+        row["phash_variants"] = " ".join(variants)
+    except Exception as err:
+        row["error"] = f"{type(err).__name__}: {err}"
     return row
 
 
 def fingerprint_all(paths: list[Path], workers: int = 16) -> pd.DataFrame:
     from concurrent.futures import ThreadPoolExecutor
 
+    from tqdm.auto import tqdm
+
     with ThreadPoolExecutor(workers) as pool:
-        return pd.DataFrame(list(pool.map(fingerprint, paths)))
+        return pd.DataFrame(list(tqdm(pool.map(fingerprint, paths), total=len(paths), desc="Fingerprinting")))
+
+
+def _variant_arrays(hashes: pd.Series) -> list[np.ndarray]:
+    """One array per turned or mirrored version, from the space-separated ``phash_variants``."""
+    rows = [h.split() for h in hashes]
+    return [cleaning._hash_array(pd.Series(column)) for column in zip(*rows)]
 
 
 def deduplicate(selection: pd.DataFrame, existing: pd.DataFrame, min_size: tuple[int, int],
@@ -273,15 +308,16 @@ def deduplicate(selection: pd.DataFrame, existing: pd.DataFrame, min_size: tuple
 
     alive = df.index[df["keep"]]
     reference = cleaning._hash_array(existing["phash"])
-    for column in ("phash", "phash_mirrored"):
-        near = cleaning._close_pairs(cleaning._hash_array(df.loc[alive, column]), reference, max_distance, same=False)
+    direct = cleaning._hash_array(df.loc[alive, "phash"])
+    for hashes in [direct] + _variant_arrays(df.loc[alive, "phash_variants"]):
+        near = cleaning._close_pairs(hashes, reference, max_distance, same=False)
         drop(alive[np.unique(near[:, 0])], "near_duplicate_of_existing_photo")
 
     alive = df.index[df["keep"]]
     direct = cleaning._hash_array(df.loc[alive, "phash"])
-    mirrored = cleaning._hash_array(df.loc[alive, "phash_mirrored"])
-    pairs = np.concatenate([cleaning._close_pairs(direct, direct, max_distance, same=True),
-                            cleaning._close_pairs(direct, mirrored, max_distance, same=False)])
+    variants = _variant_arrays(df.loc[alive, "phash_variants"])
+    pairs = np.concatenate([cleaning._close_pairs(direct, direct, max_distance, same=True)]
+                           + [cleaning._close_pairs(direct, v, max_distance, same=False) for v in variants])
     pairs = pairs[pairs[:, 0] != pairs[:, 1]]
     groups = cleaning._groups(len(alive), pairs)
     df["dup_group"] = pd.NA
