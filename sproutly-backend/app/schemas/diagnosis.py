@@ -24,8 +24,29 @@ class DiagnosisResponse(BaseModel):
     referral_message: Optional[str] = None
     # True when most of the probability belonged to a crop other than the one chosen,
     # so the app can suggest checking the crop. The other crop is never named.
+    # With a detected crop it means the crop itself was unclear.
     crop_mismatch: bool = False
+    # True when the model chose the crop (several photos, crop left out); the app shows
+    # it so the farmer can correct it with POST /diagnose/{id}/crop.
+    crop_detected: bool = False
     created_at: datetime
+
+
+class BatchItem(BaseModel):
+    # Position of the photo in the upload, so the app can match results to thumbnails.
+    index: int
+    # Set when this photo was checked; None when it could not be (see error).
+    result: Optional[DiagnosisResponse] = None
+    # Why this photo was not checked (e.g. not an image, too large). Other photos still are.
+    error: Optional[str] = None
+
+
+class BatchResponse(BaseModel):
+    results: List[BatchItem]
+
+
+class CropCorrection(BaseModel):
+    crop: CropType
 
 
 class DiagnosisListItem(BaseModel):

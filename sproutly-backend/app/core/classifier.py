@@ -14,12 +14,20 @@ class of the chosen crop is below 0.5; since the threshold is never below
 MIN_THRESHOLD = 0.5, any disagreement about the crop always ends in a referral.
 The rule can only turn diagnoses into referrals, never create one.
 
+Crop left out (several photos of mixed crops): the crop is detected as the one whose
+classes hold the most probability, then the same rule applies. Detection is reliable
+on familiar photos (100% on the test set) but wrong 27% of the time on PlantDoc,
+usually with confidence, so the app shows the detected crop and lets the farmer
+correct it (POST /diagnose/{id}/crop); with the farmer's crop, PlantDoc accuracy
+rises from 28% to 40% (measured 14 Oct with ResNet-50's saved predictions).
+
 Confidence is not calibrated yet; temperature scaling comes in Sprint 4.
 """
 
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 import torch
 from PIL import Image
@@ -59,14 +67,17 @@ def crop_of(class_name: str) -> CropType:
 
 @dataclass
 class Prediction:
-    class_name: str  # best class of the chosen crop, e.g. "Tomato___Late_blight"
+    class_name: str  # best class of the crop, e.g. "Tomato___Late_blight"
     confidence: float  # its 11-class probability (not rescaled)
-    crop_probability: float  # total probability of all the chosen crop's classes
+    crop: CropType  # the farmer's crop, or the detected one
+    crop_detected: bool  # True when the model chose the crop
+    crop_probability: float  # total probability of all that crop's classes
     is_referred: bool
 
     @property
     def crop_mismatch(self) -> bool:
-        """Most of the probability belongs to another crop."""
+        """Chosen crop: most of the probability belongs to another crop.
+        Detected crop: no crop holds most of the probability (crop unclear)."""
         return self.crop_probability < 0.5
 
 
@@ -123,10 +134,18 @@ def threshold() -> float:
     return max(settings.confidence_threshold, MIN_THRESHOLD)
 
 
-def predict(crop: CropType, image_path: str) -> Prediction:
+def predict(crop: Optional[CropType], image_path: str) -> Prediction:
+    """Diagnose one photo. Without a crop, the crop is detected first (see module docstring)."""
     model = load_model()
     with Image.open(image_path) as image:
         probs = model.probabilities(image)
+
+    def crop_total(c: CropType) -> float:
+        return sum(probs[i].item() for i, k in enumerate(model.crops) if k == c)
+
+    detected = crop is None
+    if detected:
+        crop = max(set(model.crops), key=crop_total)
 
     in_crop = [i for i, c in enumerate(model.crops) if c == crop]
     best = max(in_crop, key=lambda i: probs[i].item())
@@ -134,6 +153,8 @@ def predict(crop: CropType, image_path: str) -> Prediction:
     return Prediction(
         class_name=model.classes[best],
         confidence=confidence,
-        crop_probability=sum(probs[i].item() for i in in_crop),
+        crop=crop,
+        crop_detected=detected,
+        crop_probability=crop_total(crop),
         is_referred=confidence < threshold(),
     )
