@@ -1,0 +1,30 @@
+{
+  "encoder": "tfidf",
+  "fusion": "concat",
+  "missing_rate": 0.2,
+  "variant": "A",
+  "resnet50_val_field": {
+    "images": 509,
+    "accuracy": 0.9960707269155207,
+    "macro_f1": 0.9948198477728202,
+    "ece": 0.005576869476520736,
+    "nll": 0.02896437793970108,
+    "mean_confidence": 0.991797685623169
+  },
+  "test_bias": {
+    "healthy_with_disease_text": 0.014150943396226415,
+    "healthy_with_same_crop_text": 0.014150943396226415,
+    "healthy_without_text": 0.014150943396226415,
+    "diseased_without_text_called_healthy": 0.0,
+    "diseased_called_healthy_by_resnet_alone": 0.0
+  },
+  "cpu_ms_per_sentence": {
+    "tfidf": 0.0,
+    "distilbert": 49.51249450027717,
+    "bert_base": 101.49352749999707,
+    "minilm": 22.617083500108492,
+    "mpnet": 100.47047450007085,
+    "scibert": 92.63916150030127
+  },
+  "quick_test": false
+}
