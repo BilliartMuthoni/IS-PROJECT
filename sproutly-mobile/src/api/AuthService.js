@@ -67,7 +67,7 @@ export async function confirmMfaSetup({ mfaToken, code }) {
     }
 }
 
-/** Sign-in options the backend has switched on, e.g. ["github"]. */
+/** Sign-in options the backend has switched on, e.g. ["google"]. */
 export async function fetchSignInProviders() {
     try {
         const { data } = await client.get('/auth/oauth/providers');
@@ -78,7 +78,7 @@ export async function fetchSignInProviders() {
     }
 }
 
-/** Swap the one-time code from a GitHub sign-in for tokens (or an authenticator challenge). */
+/** Swap the one-time code from a Google sign-in for tokens (or an authenticator challenge). */
 export async function exchangeOAuthCode({ code, codeVerifier }) {
     try {
         const { data } = await client.post('/auth/oauth/exchange', { code, code_verifier: codeVerifier });

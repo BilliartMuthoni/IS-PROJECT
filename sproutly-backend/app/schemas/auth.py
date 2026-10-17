@@ -74,7 +74,7 @@ class TokenResponse(BaseModel):
 
 
 class OAuthExchangeRequest(BaseModel):
-    # One-time login code the backend sent to the app's link after GitHub sign-in.
+    # One-time login code the backend sent to the app's link after Google sign-in.
     code: str
     # PKCE verifier the app generated before opening the browser (RFC 7636: 43-128 characters).
     code_verifier: str

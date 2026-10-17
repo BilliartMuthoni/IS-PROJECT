@@ -1,12 +1,16 @@
-"""The provider-specific half of "Continue with GitHub / Google" (OAuth 2.0, RFC 6749;
-Google adds OpenID Connect on top).
+"""The provider-specific half of "Continue with Google" (OAuth 2.0, RFC 6749, with
+OpenID Connect on top).
 
-The farmer signs in on the provider's own page, so Sproutly never sees that password.
-The provider then sends the browser back to our callback with a short-lived code,
-which the backend swaps, server to server and with the client secret, for an access
-token it uses once to read who the user is. Each provider differs only in its
-addresses and in how it reports the user's ID and verified email, so the flow in
-app/routers/oauth.py is shared.
+The farmer signs in on Google's own page, so Sproutly never sees that password.
+Google then sends the browser back to our callback with a short-lived code, which
+the backend swaps, server to server and with the client secret, for an access token
+it uses once to read who the user is. A provider is just its addresses and how it
+reports the user's ID and verified email, so the flow in app/routers/oauth.py does
+not depend on it.
+
+GitHub sign-in was built and then removed: farmers rarely have GitHub accounts and
+admins use a password with a mandatory authenticator code, so it served no one, and
+an unused sign-in route is only extra attack surface.
 """
 
 from dataclasses import dataclass
@@ -33,21 +37,6 @@ class Identity:
     email: Optional[str]
 
 
-def _github_identity(client: httpx.Client, access_token: str) -> tuple[str, Optional[str]]:
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-    user = client.get("https://api.github.com/user", headers=headers)
-    user.raise_for_status()
-    emails = client.get("https://api.github.com/user/emails", headers=headers)
-    emails.raise_for_status()
-    verified = [e for e in emails.json() if e.get("verified")]
-    primary = next((e for e in verified if e.get("primary")), verified[0] if verified else None)
-    return str(user.json()["id"]), primary["email"] if primary else None
-
-
 def _google_identity(client: httpx.Client, access_token: str) -> tuple[str, Optional[str]]:
     # OpenID Connect userinfo: "sub" is Google's permanent user ID.
     info = client.get("https://openidconnect.googleapis.com/v1/userinfo",
@@ -69,14 +58,6 @@ class Provider:
 
 
 PROVIDERS = {
-    "github": Provider(
-        authorize_url="https://github.com/login/oauth/authorize",
-        token_url="https://github.com/login/oauth/access_token",
-        scope="read:user user:email",
-        client_id=lambda: settings.github_client_id,
-        client_secret=lambda: settings.github_client_secret,
-        identity=_github_identity,
-    ),
     "google": Provider(
         authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
         token_url="https://oauth2.googleapis.com/token",
@@ -139,7 +120,7 @@ def fetch_identity(provider: str, code: str, code_verifier: str, redirect_uri: s
                 },
             ).json()
             if "access_token" not in token:
-                # e.g. bad_verification_code / invalid_grant when the code was already used or has expired.
+                # e.g. invalid_grant when the code was already used or has expired.
                 raise OAuthError(token.get("error", "no access token"))
             subject, email = p.identity(client, token["access_token"])
     except httpx.HTTPError as exc:

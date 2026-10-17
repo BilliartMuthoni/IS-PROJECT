@@ -8,7 +8,6 @@ import { toFriendlyError } from '../utils/errorMessages';
 import ErrorBanner from './ErrorBanner';
 
 const PROVIDERS = {
-    github: { label: 'Continue with GitHub', icon: 'logo-github' },
     google: { label: 'Continue with Google', icon: 'logo-google' },
 };
 
