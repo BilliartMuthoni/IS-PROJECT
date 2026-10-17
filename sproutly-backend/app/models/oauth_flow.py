@@ -4,7 +4,7 @@ from app.db.session import Base
 
 
 class OAuthFlow(Base):
-    """One "Continue with GitHub" attempt, from the button tap until the app has its tokens.
+    """One "Continue with Google" attempt, from the button tap until the app has its tokens.
 
     Times are naive UTC. The row is created when the browser is sent to the provider,
     filled in when the provider sends it back, and marked used when the app swaps the

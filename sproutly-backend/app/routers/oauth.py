@@ -1,10 +1,10 @@
-"""Continue with GitHub: OAuth 2.0 sign-in run by the backend.
+"""Continue with Google: OAuth 2.0 sign-in run by the backend.
 
 1. The app makes a random PKCE verifier, keeps it, and opens the browser at
    /start with the verifier's hash (code_challenge) and its own return link.
-2. /start records the attempt and sends the browser to GitHub's sign-in page.
-3. GitHub sends the browser back to /callback with a code and our `state`.
-   The backend swaps the code for the user's GitHub identity, finds or creates
+2. /start records the attempt and sends the browser to Google's sign-in page.
+3. Google sends the browser back to /callback with a code and our `state`.
+   The backend swaps the code for the user's Google identity, finds or creates
    the account, and sends the browser back to the app with a one-time login code.
 4. The app posts that code with its verifier to /exchange and gets its tokens.
 
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/auth/oauth", tags=["auth"])
 
 # The app swaps the login code straight away; a short life limits a leaked one.
 LOGIN_CODE_MINUTES = 2
-PROVIDER_ID_COLUMNS = {"github": "github_id", "google": "google_id"}
+PROVIDER_ID_COLUMNS = {"google": "google_id"}
 
 
 def _now() -> datetime:
@@ -61,7 +61,7 @@ def _find_or_create_user(db: Session, identity: oauth.Identity) -> User:
 
     if identity.email:
         # Link to an existing account only through an email the provider has verified;
-        # otherwise anyone could add a victim's address to a new GitHub account and take over.
+        # otherwise anyone could add a victim's address to a new provider account and take over.
         user = db.query(User).filter(User.user_email == identity.email).first()
         if user:
             if getattr(user, column) is not None:
@@ -180,7 +180,7 @@ def exchange(request: Request, payload: OAuthExchangeRequest, db: Session = Depe
     if not user or not user.is_active:
         raise invalid
 
-    # A GitHub login on an account that has MFA on still asks for the authenticator code.
+    # A Google login on an account that has MFA on still asks for the authenticator code.
     # (Accounts linked by email lose their old authenticator above, so this applies to
     # accounts that set one up after linking.)
     if user.mfa_enabled:

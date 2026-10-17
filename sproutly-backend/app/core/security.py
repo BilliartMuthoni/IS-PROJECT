@@ -74,7 +74,7 @@ def decode_token(token: str) -> Optional[dict]:
         return None
 
 
-# --- One-time codes for sign-in with GitHub / Google ---
+# --- One-time codes for sign-in with Google ---
 
 def new_url_token() -> str:
     """Random value safe to put in a link (256 bits)."""

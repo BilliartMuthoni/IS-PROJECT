@@ -1,4 +1,4 @@
-// "Continue with GitHub" on the phone: the app's half of the backend's OAuth flow
+// "Continue with Google" on the phone: the app's half of the backend's OAuth flow
 // (see sproutly-backend/app/routers/oauth.py).
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';

@@ -17,7 +17,6 @@ class User(Base):
     user_email = Column(String, unique=True, index=True, nullable=True)
     user_phone_number = Column(String, unique=True, index=True, nullable=True)
     google_id = Column(String, unique=True, index=True, nullable=True)
-    github_id = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=True)
 
     role = Column(SqlEnum(UserRole, name="user_role"), nullable=False, default=UserRole.farmer)
