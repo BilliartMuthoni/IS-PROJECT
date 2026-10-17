@@ -1,0 +1,18 @@
+﻿factsheet_id,class_name,split,url,section
+20117800552,Potato___Late_blight,train,https://factsheetadmin.plantwise.org/Uploads/PDFs/20117800552.pdf,
+20157800231,Potato___Late_blight,train,https://factsheetadmin.plantwise.org/Uploads/PDFs/20157800231.pdf,
+20157800171,Potato___Late_blight,train,https://factsheetadmin.plantwise.org/Uploads/PDFs/20157800171.pdf,
+20147801445,Potato___Late_blight,val,https://factsheetadmin.plantwise.org/Uploads/PDFs/20147801445.pdf,
+20103326450,Potato___Late_blight,test,https://factsheetadmin.plantwise.org/Uploads/PDFs/20103326450.pdf,
+pv-potato-late-blight,Potato___Late_blight,train,https://plantvillage.psu.edu/topics/potato/infos,Potato Late Blight
+pv-potato-early-blight,Potato___Early_blight,train,https://plantvillage.psu.edu/topics/potato/infos,Potato Early Blight
+20137804183,Tomato___Late_blight,heldout,https://factsheetadmin.plantwise.org/Uploads/PDFs/20137804183.pdf,
+pv-tomato-late-blight,Tomato___Late_blight,train,https://plantvillage.psu.edu/topics/tomato/infos,Late blight
+20137803397,Tomato___Early_blight,heldout,https://factsheetadmin.plantwise.org/Uploads/PDFs/20137803397.pdf,
+pv-tomato-early-blight,Tomato___Early_blight,train,https://plantvillage.psu.edu/topics/tomato/infos,Early blight
+20127802686,Tomato___Bacterial_spot,heldout,https://factsheetadmin.plantwise.org/Uploads/PDFs/20127802686.pdf,
+pv-tomato-bacterial-spot,Tomato___Bacterial_spot,train,https://plantvillage.psu.edu/topics/tomato/infos,Bacterial spot
+20147801404,Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot,heldout,https://factsheetadmin.plantwise.org/Uploads/PDFs/20147801404.pdf,
+pv-maize-gray-leaf-spot,Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot,train,https://plantvillage.psu.edu/topics/corn-maize/infos,Cercospora leaf spot (Gray leaf spot)
+pv-maize-common-rust,Corn_(maize)___Common_rust_,train,https://plantvillage.psu.edu/topics/corn-maize/infos,Common rust
+pv-maize-northern-leaf-blight,Corn_(maize)___Northern_Leaf_Blight,train,https://plantvillage.psu.edu/topics/corn-maize/infos,Northern Leaf Blight

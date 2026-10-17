@@ -19,3 +19,4 @@ tqdm
 pyyaml
 requests
 roboflow
+pypdf
